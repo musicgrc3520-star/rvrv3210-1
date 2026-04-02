@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>rvrv3210-首頁</title>
+  <style>
+    body { font-family: Arial; margin:0; background:#f4f4f4; }
+    nav { background:#333; padding:10px; text-align:center; }
+    nav a { color:white; margin:0 10px; text-decoration:none; font-weight:bold; cursor:pointer; }
+    nav a:hover { color: yellow; }
+    .section { display:none; padding:50px; text-align:center; }
+    .active { display:block; }
+    .card { background:white; padding:20px; margin:20px auto; width:500px; border-radius:10px; }
+  </style>
+</head>
+<body>
+<div id="loading">
+  <p>Loading...</p>
+  <progress id="bar" value="0" max="100"></progress>
+</div>
+
+<style>
+#loading {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: black;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+}
+progress {
+  width: 200px;
+  height: 20px;
+}
+</style>
+
+<script>
+let i = 0;
+let bar = document.getElementById("bar");
+
+let timer = setInterval(() => {
+  i += 5;
+  bar.value = i;
+
+  if(i >= 100){
+    clearInterval(timer);
+    document.getElementById("loading").style.display = "none";
+  }
+}, 100);
+</script>
+  <nav>
+  <h1 style="color:white">rvrv3210&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;現在時間：<span id="time"></span></h1>
+  <a onclick="playSound();showSection('home')">首頁</a>
+  <a onclick="playSound();showSection('about')">關於我</a>
+  <a onclick="playSound();showSection('portfolio')">我的影片</a>
+  <a onclick="playSound();showSection('Recommended')">roblox推薦遊戲</a>
+  <a onclick="playSound();showSection('here')">影片這裡看</a>
+  <a onclick="playSound();showSection('More')">更多</a>
+  <a href="https://www.youtube.com/@Becky-George">yt帳號</a>
+  <script>
+    function playSound(){
+      let audio = new Audio("voice_305630.mp3");
+      audio.play();
+    }
+  </script>
+</nav>
+<div id="home" class="section active">
+  <div class="card">
+    <img src="螢幕擷取畫面 2026-03-29 080941.png">
+    <h1>歡迎來到rvrv3210網站 </h1>
+    <p>最新消息🎉</p>
+<div class="box">
+  第一部mc影片上架啦!
+  網址:<a href="https://youtu.be/TKGnFkDuzcI">https://youtu.be/TKGnFkDuzcI</a>
+</div>
+<style>
+.box {
+  border: 2px solid #333;
+  padding: 20px;
+  width: 300px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+
+  margin: 50px auto;
+  text-align: center;
+}
+.box {
+  border: 2px solid #333;
+  padding: 20px;
+  width: 300px;
+  margin: 50px auto;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.box {
+  border: 2px solid #333;
+  padding: 20px;
+  width: 300px;
+  margin: 50px auto;
+  text-align: center;
+  border-radius: 10px;
+}
+</style>
+  </div>
+</div>
+<style>
+.box {
+  border: 2px solid #333;
+  padding: 20px;
+  width: 300px;
+  margin: 50px auto;
+  text-align: center;
+  border-radius: 10px;
+}
+</style>
+
+<script>
+function updateTime() {
+  const now = new Date();
+  const timeString = now.toLocaleTimeString();
+  document.getElementById("time").textContent = timeString;
+}
+
+// 每秒更新一次
+setInterval(updateTime, 1000);
+
+// 一開始先跑一次
+updateTime();
+</script>
+<div id="about" class="section">
+  <div class="card">
+    <h1>關於我</h1>
+    <p>目前錄2部影片，接下來暫時拍roblox，可能也會拍mc，感謝觀眾的支持，祝你們平安健康!</p>
+  </div>
+</div>
+
+<div id="portfolio" class="section">
+  <div class="card">
+    <h1>我的影片</h1>
+    <p>這裡會放我的影片網址 😎</p>
+    <a href="https://www.youtube.com/watch?v=fgiLYS-xys8">level devil第一部分(上)</a><br/>
+    <a href="https://youtu.be/TKGnFkDuzcI">rvrv3210的世界生存</a>
+  </div>
+</div>
+<div id="Recommended" class="section">
+  <div class="card">
+    <h1>roblox推薦遊戲</h1>
+    <p>這裡放近期roblox的推薦遊戲 😎</p>
+    <h3>1.競爭者-網址:</h3>
+    <a href="https://www.roblox.com/games/17625359962/RIVALS">https://www.roblox.com/games/17625359962/RIVALS</a>
+    <h3>2.森林中的99夜-網址:</h3>
+    <a href="https://www.roblox.com/games/79546208627805/99-Nights-in-the-Forest">https://www.roblox.com/games/79546208627805/99-Nights-in-the-Forest</a>
+    <h3>接下來可以由觀眾進行投票</h3>
+  </div>
+</div>
+<div id="here" class="section">
+  <div class="card">
+    <p>rvrv3210的世界生存</p>
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/TKGnFkDuzcI?si=cNiL-uhIAx8waAvK" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    <p>level devil第一部分(上)</p>
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/fgiLYS-xys8?si=b0rAs7YQG5rOmwQ0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  </div>
+</div>
+<div id="More" class="section">
+  <div class="card">
+    <h1>更多</h1>
+    <p>抱歉，目前未更新這裡，敬啟期待未來更新!!</p>
+  </div>
+</div>
+<script>
+function showSection(id) {
+  // 隱藏所有區塊
+  const sections = document.querySelectorAll('.section');
+  sections.forEach(sec => sec.classList.remove('active'));
+  //⭐
+
+
+  // 顯示被點選的區塊
+  document.getElementById(id).classList.add('active');
+  }
+
+</script>
+</body>
+</html>
+
