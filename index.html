@@ -60,6 +60,7 @@ let timer = setInterval(() => {
   <a onclick="playSound();showSection('portfolio')">我的影片</a>
   <a onclick="playSound();showSection('Recommended')">roblox推薦遊戲</a>
   <a onclick="playSound();showSection('here')">影片這裡看</a>
+  <a onclick="playSound();showSection('settings')">設定</a>
   <a onclick="playSound();showSection('More')">更多</a>
   <a href="https://www.youtube.com/@Becky-George">yt帳號</a>
   <script>
@@ -165,6 +166,30 @@ updateTime();
     <iframe width="560" height="315" src="https://www.youtube.com/embed/TKGnFkDuzcI?si=cNiL-uhIAx8waAvK" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     <p>level devil第一部分(上)</p>
     <iframe width="560" height="315" src="https://www.youtube.com/embed/fgiLYS-xys8?si=b0rAs7YQG5rOmwQ0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  </div>
+</div>
+<div id="settings" class="section">
+  <div class="card">
+    <button onclick="toggleSound()" id="btn">🔊 開啟</button>
+
+<script>
+let soundOn = false;
+let audio = new Audio("voice_305630.mp3");
+
+function toggleSound(){
+  let btn = document.getElementById("btn");
+
+  if(soundOn){
+    audio.pause();
+    btn.innerText = "🔇 關閉";
+    soundOn = false;
+  } else {
+    audio.play();
+    btn.innerText = "🔊 開啟";
+    soundOn = true;
+  }
+}
+</script>
   </div>
 </div>
 <div id="More" class="section">
