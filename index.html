@@ -64,11 +64,36 @@ let timer = setInterval(() => {
   <a onclick="playSound();showSection('More')">更多</a>
   <a href="https://www.youtube.com/@Becky-George">yt帳號</a>
   <script>
-    function playSound(){
-      let audio = new Audio("voice_305630.mp3");
-      audio.play();
-    }
-  </script>
+   let soundOn = true;
+   let audio = new Audio("voice_305630.mp3");
+
+   function playSound(){
+   if(soundOn){
+    audio.currentTime = 0; // 每次從頭播放
+    audio.play();
+   }
+ }
+
+function toggleSound(){
+  soundOn = !soundOn;
+}
+</script>
+<style>
+body.dark {
+  background: #111;
+  color: white;
+}
+
+body.dark .card {
+  background: #222;
+}
+</style>
+
+<script>
+function toggleMode(){
+  document.body.classList.toggle("dark");
+}
+</script>
 </nav>
 <div id="home" class="section active">
   <div class="card">
@@ -170,23 +195,34 @@ updateTime();
 </div>
 <div id="settings" class="section">
   <div class="card">
-    <button onclick="toggleSound()" id="btn">🔊 開啟</button>
-
+    <h1>設定</h1>
+    <div style="display:flex; align-items:center;">
+    <p>聲音:</p>
+    <button onclick="toggleSound()" id="btn">🔊 聲音開啟</button>
+   </div>
+    <div style="display:flex; align-items:center;">
+    <p>深色:</p>
+    <button onclick="toggleMode()" id="modeBtn">🌙 深色模式</button>
+   </div>
 <script>
-let soundOn = false;
-let audio = new Audio("voice_305630.mp3");
+function toggleMode(){
+  let btn = document.getElementById("modeBtn");
+  document.body.classList.toggle("dark");
 
+  if(document.body.classList.contains("dark")){
+    btn.innerText = "☀️ 淺色模式";
+  } else {
+    btn.innerText = "🌙 深色模式";
+  }
+}
 function toggleSound(){
   let btn = document.getElementById("btn");
+  soundOn = !soundOn;
 
   if(soundOn){
-    audio.pause();
-    btn.innerText = "🔇 關閉";
-    soundOn = false;
+    btn.innerText = "🔊 聲音開啟";
   } else {
-    audio.play();
-    btn.innerText = "🔊 開啟";
-    soundOn = true;
+    btn.innerText = "🔇 已靜音";
   }
 }
 </script>
