@@ -141,7 +141,7 @@
             from { transform: scale(1); }
             to { transform: scale(1.15); }
         }
-        .Default-1{
+        #h1-1{
             color: #ffe100;
             /*width: 320px;*/
             box-shadow: inset 10px 20px 5px #0005;
@@ -149,9 +149,25 @@
             background-color:#296b68
         }
         body{
-            background-color:#1db5ae
+            background-color:#11ddbb
+        }
+        button{
+            border-radius:10px ;
+            color: #ff0000;
+            background-color: #00ff00;
+        }
+        button:hover{
+            border-radius:10px ;
+            color: #ff0000;
+            background-color: #308830;      
         }
     </style>
+    <script>
+        function navigateTo(url) {
+    // 執行跳轉
+    window.location.href = url;
+}
+    </script>
 </head>
 <body>
 <div class="loader-wrapper">
@@ -168,11 +184,11 @@
     <header class="hero-section">
         <div class="hero-bg"></div>
         <div class="hero-content">
-        <h1 class="Default-1">歡迎來到rvrv3210網站</h1>
+        <h1 id="h1-1">歡迎來到rvrv3210網站</h1>
         </div>
     </header>
     <footer>
-        <a href="https://www.youtube.com/channel/UCGQrk3LofChvqrj4Y7XpYYw"><img></a>
+        <pre>                                                                                                                                            <a target="_blank"class="clean-link" onclick="navigateTo('https://www.youtube.com/channel/UCGQrk3LofChvqrj4Y7XpYYw?sub_confirmation=1')"><button><h1 id="h1-2">點我訂閱!</h1></button></a></pre>
     </footer>
 </body>
 </html>
