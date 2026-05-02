@@ -1,257 +1,177 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>rvrv3210-首頁</title>
-    <link rel="shortcut icon" href="66666.ico">
-  <style>
-    body { font-family: Arial; margin:0; background:#f4f4f4; }
-    nav { background:#333; padding:10px; text-align:center; }
-    nav a { color:white; margin:0 10px; text-decoration:none; font-weight:bold; cursor:pointer; }
-    nav a:hover { color: yellow; }
-    .section { display:none; padding:50px; text-align:center; }
-    .active { display:block; }
-    .card { background:white; padding:20px; margin:20px auto; width:500px; border-radius:10px; }
-  </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rvrv3210網站</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft JhengHei", sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            overflow-x: hidden;
+        }
+
+        /* --- 2. 開場遮罩層 (Loader) --- */
+        .loader-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000; /* 黑色背景營造電影感 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            /* 動畫：3.5秒後淡出消失 */
+            animation: wrapperFadeOut 1s forwards 3.5s;
+        }
+
+        .intro-box {
+            text-align: center;
+        }
+
+        /* Logo 圖片動畫 */
+        .loader-logo {
+            width: 120px; /* 根據你的圖片調整大小 */
+            opacity: 0;
+            /* 動畫：0.5秒後開始淡入，持續1.5秒 */
+            animation: logoEnter 1.5s ease-out forwards 0.5s;
+        }
+
+        /* 標語文字容器 */
+        .intro-text {
+            margin-top: 25px;
+            color: white;
+            overflow: hidden; /* 確保文字滑入時有被切掉的效果 */
+        }
+
+        .slogan {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 8px;
+            opacity: 0;
+            /* 動畫：1.2秒後開始滑入 */
+            animation: textSlideUp 1.2s cubic-bezier(0.2, 0.6, 0.2, 1) forwards 1.2s;
+        }
+
+        .sub-text {
+            font-size: 0.9rem;
+            margin-top: 10px;
+            color: #888;
+            opacity: 0;
+            /* 動畫：最後才淡淡浮現 */
+            animation: fadeInOnly 1s forwards 2.2s;
+        }
+
+        /* --- 3. 網頁主體內容 (Hero) --- */
+        .hero-section {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* 這裡換成你的背景圖片網址 */
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+                        url('1111.png') center/cover;
+            /* 動畫：緩慢縮放 */
+            animation: backgroundZoom 20s infinite alternate;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            color: white;
+            text-align: center;
+        }
+
+        /* --- 4. 動畫定義 (Keyframes) --- */
+
+        /* Logo 淡入並縮放 */
+        @keyframes logoEnter {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* 文字由下往上滑入，帶有字距變窄效果 */
+        @keyframes textSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+                letter-spacing: 20px;
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                letter-spacing: 8px;
+            }
+        }
+
+        /* 單純淡入 */
+        @keyframes fadeInOnly {
+            to { opacity: 1; }
+        }
+
+        /* 整個遮罩層消失 */
+        @keyframes wrapperFadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        /* 背景圖縮放 */
+        @keyframes backgroundZoom {
+            from { transform: scale(1); }
+            to { transform: scale(1.15); }
+        }
+        .Default-1{
+            color: #ffe100;
+            /*width: 320px;*/
+            box-shadow: inset 10px 20px 5px #0005;
+            text-align: center;
+            background-color:#296b68
+        }
+        body{
+            background-color:#1db5ae
+        }
+    </style>
 </head>
 <body>
-<div id="loading">
-  <p>Loading...</p>
-  <progress id="bar" value="0" max="100"></progress>
-</div>
-
-<style>
-#loading {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background: black;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-}
-progress {
-  width: 200px;
-  height: 20px;
-}
-</style>
-
-<script>
-let i = 0;
-let bar = document.getElementById("bar");
-
-let timer = setInterval(() => {
-  i += 5;
-  bar.value = i;
-
-  if(i >= 100){
-    clearInterval(timer);
-    document.getElementById("loading").style.display = "none";
-  }
-}, 100);
-</script>
-  <nav>
-  <h1 style="color:white">rvrv3210&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;現在時間：<span id="time"></span></h1>
-  <a onclick="playSound();showSection('home')">首頁</a>
-  <a onclick="playSound();showSection('about')">關於我</a>
-  <a onclick="playSound();showSection('portfolio')">我的影片</a>
-  <a onclick="playSound();showSection('Recommended')">roblox推薦遊戲</a>
-  <a onclick="playSound();showSection('here')">影片這裡看</a>
-  <a onclick="playSound();showSection('settings')">設定</a>
-  <a onclick="playSound();showSection('More')">更多</a>
-  <a href="https://www.youtube.com/@Becky-George"target="_blank">yt帳號</a>
-  <script>
-   let soundOn = true;
-   let audio = new Audio("voice_305630.mp3");
-
-   function playSound(){
-   if(soundOn){
-    audio.currentTime = 0; // 每次從頭播放
-    audio.play();
-   }
- }
-
-function toggleSound(){
-  soundOn = !soundOn;
-}
-</script>
-<style>
-
-body.dark {
-  background: #111;
-  color: white;
-}
-
-body.dark .card {
-  background: #222;
-}
-
-body.dark .box {
-  background: #222;
-  color: white;
-}
-</style>
-<script>
-function toggleMode(){
-  document.body.classList.toggle("dark");
-}
-</script>
-</nav>
-<div id="home" class="section active">
-  <div class="card">
-    <img src="螢幕擷取畫面 2026-03-29 080941.png">
-    <h1>歡迎來到rvrv3210網站 </h1>
-    <p>最新消息🎉</p>
-<div class="box">
-  <p>第一部mc影片上架啦!</p>
-  網址:<a href="https://youtu.be/TKGnFkDuzcI"target="_blank">https://youtu.be/TKGnFkDuzcI</a>
-</div>
-<style>
-.box {
-  border: 2px solid #333;
-  padding: 20px;
-  width: 300px;
-  background-color: #f9f9f9;
-  border-radius: 10px;
-
-  margin: 50px auto;
-  text-align: center;
-}
-.box {
-  border: 2px solid #333;
-  padding: 20px;
-  width: 300px;
-  margin: 50px auto;
-  text-align: center;
-  border-radius: 10px;
-}
-
-.box {
-  border: 2px solid #333;
-  padding: 20px;
-  width: 300px;
-  margin: 50px auto;
-  text-align: center;
-  border-radius: 10px;
-}
-</style>
-  </div>
-</div>
-<style>
-.box {
-  border: 2px solid #333;
-  padding: 20px;
-  width: 300px;
-  margin: 50px auto;
-  text-align: center;
-  border-radius: 10px;
-}
-</style>
-
-<script>
-function updateTime() {
-  const now = new Date();
-  const timeString = now.toLocaleTimeString();
-  document.getElementById("time").textContent = timeString;
-}
-
-// 每秒更新一次
-setInterval(updateTime, 1000);
-
-// 一開始先跑一次
-updateTime();
-</script>
-<div id="about" class="section">
-  <div class="card">
-    <h1>關於我</h1>
-    <p>目前錄2部影片，接下來暫時拍roblox，可能也會拍mc，感謝觀眾的支持，祝你們平安健康!</p>
-  </div>
-</div>
-
-<div id="portfolio" class="section">
-  <div class="card">
-    <h1>我的影片</h1>
-    <p>這裡會放我的影片網址 😎</p>
-    <a href="https://www.youtube.com/watch?v=fgiLYS-xys8"target="_blank">level devil第一部分(上)</a><br/>
-    <a href="https://youtu.be/TKGnFkDuzcI"target="_blank">rvrv3210的世界生存</a>
-  </div>
-</div>
-<div id="Recommended" class="section">
-  <div class="card">
-    <h1>roblox推薦遊戲</h1>
-    <p>這裡放近期roblox的推薦遊戲 😎</p>
-    <h3>1.競爭者-網址:</h3>
-    <a href="https://www.roblox.com/games/17625359962/RIVALS"target="_blank">https://www.roblox.com/games/17625359962/RIVALS</a>
-    <h3>2.森林中的99夜-網址:</h3>
-    <a href="https://www.roblox.com/games/79546208627805/99-Nights-in-the-Forest"target="_blank">https://www.roblox.com/games/79546208627805/99-Nights-in-the-Forest</a>
-    <h3>接下來可以由觀眾進行投票</h3>
-  </div>
-</div>
-<div id="here" class="section">
-  <div class="card">
-    <p>rvrv3210的世界生存</p>
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/TKGnFkDuzcI?si=cNiL-uhIAx8waAvK" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-    <p>level devil第一部分(上)</p>
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/fgiLYS-xys8?si=b0rAs7YQG5rOmwQ0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-  </div>
-</div>
-<div id="settings" class="section">
-  <div class="card">
-    <h1>設定</h1>
-    <div style="display:flex; align-items:center;">
-    <p>聲音:</p>
-    <button onclick="toggleSound()" id="btn">🔊 聲音開啟</button>
-   </div>
-    <div style="display:flex; align-items:center;">
-    <p>深色:</p>
-    <button onclick="toggleMode()" id="modeBtn">🌙 深色模式</button>
-   </div>
-<script>
-function toggleMode(){
-  let btn = document.getElementById("modeBtn");
-  document.body.classList.toggle("dark");
-
-  if(document.body.classList.contains("dark")){
-    btn.innerText = "☀️ 淺色模式";
-  } else {
-    btn.innerText = "🌙 深色模式";
-  }
-}
-function toggleSound(){
-  let btn = document.getElementById("btn");
-  soundOn = !soundOn;
-
-  if(soundOn){
-    btn.innerText = "🔊 聲音開啟";
-  } else {
-    btn.innerText = "🔇 已靜音";
-  }
-}
-</script>
-  </div>
-</div>
-<div id="More" class="section">
-  <div class="card">
-    <h1>更多</h1>
-    <p>抱歉，目前未更新這裡，敬啟期待未來更新!!</p>
-  </div>
-</div>
-<script>
-function showSection(id) {
-  // 隱藏所有區塊
-  const sections = document.querySelectorAll('.section');
-  sections.forEach(sec => sec.classList.remove('active'));
-  //⭐
-
-
-  // 顯示被點選的區塊
-  document.getElementById(id).classList.add('active');
-  }
-
-</script>
+<div class="loader-wrapper">
+        <div class="intro-box">
+            <img src="12345.png" alt="Logo" class="loader-logo">
+            
+            <div class="intro-text">
+                <h2 class="slogan">rvrv3210</h2>
+                <p class="sub-text">知名yt主播
+                </p>
+            </div>
+        </div>
+    </div> 
+    <header class="hero-section">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+        <h1 class="Default-1">歡迎來到rvrv3210網站</h1>
+        </div>
+    </header>
+    <footer>
+        <a href="https://www.youtube.com/channel/UCGQrk3LofChvqrj4Y7XpYYw"><img></a>
+    </footer>
 </body>
 </html>
