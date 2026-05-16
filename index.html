@@ -1,3 +1,24 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rvrv3210網站</title>
+    <link rel="shortcut icon" href="game/66666.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft JhengHei", sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            overflow-x: hidden;
+        }
+
         /* --- 2. 開場遮罩層 (Loader) --- */
         .loader-wrapper {
             position: fixed;
@@ -121,3 +142,61 @@
             from { transform: scale(1); }
             to { transform: scale(1.15); }
         }
+        .h1-1{
+            color: #ffe100;
+            /*width: 320px;*/
+            box-shadow: inset 10px 20px 5px #0005;
+            text-align: center;
+            background-color:#296b68
+        }
+        body{
+            background-color:#11ddbb
+        }
+        button{
+            border-radius:10px ;
+            background-color: #1eff00;
+            color: #ff0000;
+        }
+        button:hover{
+            border-radius:10px ;
+            background-color: #2f6428;
+            color: #ff0000;
+        }
+        </style>
+</head>
+<body>
+    <div class="loader-wrapper">
+        <div class="intro-box">
+            <img src="game/12345.png" alt="Logo" class="loader-logo">            
+            <div class="intro-text">
+                <h2 class="slogan">rvrv3210</h2>
+                <p class="sub-text">知名yt主播</p>
+            </div>
+        </div>
+    </div> 
+    <header class="hero-section">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+        <h1 class="h1-1">歡迎來到rvrv3210網站</h1>
+        <h2>向下滑更多</h2>
+        </div>
+    </header>
+    <footer>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <h2>我的遊戲:</h2>
+            <a target="_blank" href="game/game.html">
+            <button>
+                <h1 id="h1-2">2048-2</h1>
+            </button>
+            </a>
+        </div>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <a target="_blank" href="https://www.youtube.com/channel/UCGQrk3LofChvqrj4Y7XpYYw?sub_confirmation=1">
+            <button>
+                <h1 id="h1-2">點我訂閱!</h1>
+            </button>
+            </a>
+        </div>
+    </footer>
+</body>
+</html>
