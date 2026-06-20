@@ -1,618 +1,97 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2048 障礙版</title>
-
-<style>
-            /* --- 2. 開場遮罩層 (Loader) --- */
-        .loader-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000; /* 黑色背景營造電影感 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            /* 動畫：3.5秒後淡出消失 */
-            animation: wrapperFadeOut 1s forwards 3.5s;
-        }
-
-        .intro-box {
-            text-align: center;
-        }
-
-        /* Logo 圖片動畫 */
-        .loader-logo {
-            width: 120px; /* 根據你的圖片調整大小 */
-            opacity: 0;
-            /* 動畫：0.5秒後開始淡入，持續1.5秒 */
-            animation: logoEnter 1.5s ease-out forwards 0.5s;
-        }
-
-        /* 標語文字容器 */
-        .intro-text {
-            margin-top: 25px;
-            color: white;
-            overflow: hidden; /* 確保文字滑入時有被切掉的效果 */
-        }
-
-        .slogan {
-            font-size: 1.8rem;
-            font-weight: 300;
-            letter-spacing: 8px;
-            opacity: 0;
-            /* 動畫：1.2秒後開始滑入 */
-            animation: textSlideUp 1.2s cubic-bezier(0.2, 0.6, 0.2, 1) forwards 1.2s;
-        }
-
-        .sub-text {
-            font-size: 0.9rem;
-            margin-top: 10px;
-            color: #888;
-            opacity: 0;
-            /* 動畫：最後才淡淡浮現 */
-            animation: fadeInOnly 1s forwards 2.2s;
-        }
-
-        /* --- 3. 網頁主體內容 (Hero) --- */
-        .hero-section {
-            position: relative;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        .hero-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* 這裡換成你的背景圖片網址 */
-            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
-                        url('1111.png') center/cover;
-            /* 動畫：緩慢縮放 */
-            animation: backgroundZoom 20s infinite alternate;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            color: white;
-            text-align: center;
-        }
-
-        /* --- 4. 動畫定義 (Keyframes) --- */
-
-        /* Logo 淡入並縮放 */
-        @keyframes logoEnter {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        /* 文字由下往上滑入，帶有字距變窄效果 */
-        @keyframes textSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(100%);
-                letter-spacing: 20px;
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-                letter-spacing: 8px;
-            }
-        }
-
-        /* 單純淡入 */
-        @keyframes fadeInOnly {
-            to { opacity: 1; }
-        }
-
-        /* 整個遮罩層消失 */
-        @keyframes wrapperFadeOut {
-            to {
-                opacity: 0;
-                visibility: hidden;
-            }
-        }
-
-        /* 背景圖縮放 */
-        @keyframes backgroundZoom {
-            from { transform: scale(1); }
-            to { transform: scale(1.15); }
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rvrv3210-大亨遊戲</title>
+    <link rel="icon" sizes="400x500" href="loge.jpg">
+    <style>
 body{
-    margin:0;
-    background:#5c3b1e;
-    font-family:Arial;
     display:flex;
+    flex-direction:column;
     justify-content:center;
     align-items:center;
-    min-height:100vh;
+    height:100vh;
 }
+        #money{
+            border: 10px double #555;
+            border-radius: 50px;
+            background-color: #ccc;
+            color: #000;
+            transition: 1s;
+            font-size: 30px;
+            transform: scale(100%);
+        }
+        #money:hover{
+            color: #ffff00;
+            border: 5px double #ffcc00;
+        }
+        #money:active{
+            transform: scale(80%);
+            transition: 1s;
+        }
+        div{
+            text-align:center;
+            border-radius: 10px;
+            border:5px solid #000;
+            background-color: #eee;
 
-.game{
-    background:#8b5a2b;
-    padding:20px;
-    border-radius:15px;
-    text-align:center;
-}
+        }
 
-h1{
-    color:white;
-}
-
-.grid{
-    display:grid;
-    grid-template-columns:repeat(4,90px);
-    gap:10px;
-    background:#6b4423;
-    padding:10px;
-    border-radius:10px;
-}
-
-.cell{
-    width:90px;
-    height:90px;
-    border-radius:10px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:28px;
-    font-weight:bold;
-    background:#cdc1b4;
-}
-
-.block{
-    background:#111;
-    color:white;
-}
-
-.n2{background:#eee4da;}
-.n4{background:#ede0c8;}
-.n8{background:#f2b179;color:white;}
-.n16{background:#f59563;color:white;}
-.n32{background:#f67c5f;color:white;}
-.n64{background:#f65e3b;color:white;}
-.n128{background:#edcf72;color:white;}
-.n256{background:#edcc61;color:white;}
-.n512{background:#edc850;color:white;}
-.n1024{background:#edc53f;color:white;}
-.n2048{background:#edc22e;color:white;}
-.n4096{background:purple;color:white;}
-
-button{
-    margin-top:15px;
-    padding:10px 20px;
-    border:none;
-    border-radius:10px;
-    background:#d28b36;
-    color:white;
-    font-size:18px;
-    cursor:pointer;
-}
-
-.info{
-    color:white;
-    margin-bottom:10px;
-    font-size:20px;
-}
-
-.message{
-    color:yellow;
-    font-size:24px;
-    margin-top:10px;
-}
-</style>
+    </style>
 </head>
-
 <body>
-    <div class="loader-wrapper">
-        <div class="intro-box">
-            <img src="12345.png" alt="Logo" class="loader-logo">            
-            <div class="intro-text">
-                <h2 class="slogan">rvrv3210</h2>
-                <p class="sub-text">知名yt主播</p>
-            </div>
-        </div>
+    <h1 id="show_money">你有10$</h1>
+    <button  onclick="renew_money()" id="money">按我賺0$</button>
+    <div style="width:1000px;
+    height:500px;">
+        <h2>升級</h2>
+        <h3 id="upgrade_earn_money">按一次賺0$</h3>
+        <button id="upgrade_earn_money_button" onclick="confirm_upgrade_earn_money()">升級(費用:10$)</button>
+        <h3 id="upgrade_per_second">每秒賺0$</h3>
+        <button id="upgrade_per_second_button" onclick="confirm_upgrade_per_second_earn_money()">升級(費用:15$)</button>      
     </div>
-<div class="game">
-
-<h1>2048 障礙版</h1>
-
-<div class="info">
-分數：<span id="score">0</span>
-</div>
-
-<div class="grid" id="grid"></div>
-
-<button onclick="restartGame()">重新開始</button>
-
-<div class="message" id="message"></div>
-
-</div>
-
-<script>
-
-const size = 4;
-const BLOCK = -1;
-
-let board = [];
-let score = 0;
-
-// 改為儲存最終畫面上，哪些位置發生了合併（1表示合併，0表示沒有）
-let globalMergedMap = []; 
-
-function emptyBoard(){
-    return Array(size)
-        .fill()
-        .map(()=>Array(size).fill(0));
-}
-
-function createBoard(){
-
-    board = emptyBoard();
-
-    score = 0;
-
-    addNumber();
-    addNumber();
-
-    addObstacle();
-    addObstacle();
-
-    drawBoard();
-    updateUI();
-}
-
-function addNumber(){
-
-    const empty=[];
-
-    for(let r=0;r<size;r++){
-        for(let c=0;c<size;c++){
-
-            if(board[r][c]===0){
-                empty.push({r,c});
+    <script>
+        let money = 10
+        let add_money = 0
+        let The_money_needed = 10
+        let per_second = 0
+        let The_money_needed2 = 15
+        function renew_money(){
+            money += add_money
+            document.getElementById("show_money").textContent = "你有" + money + "$"
+        }
+        setInterval(function(){
+            money += per_second
+            document.getElementById("show_money").textContent = "你有" + money + "$"
+        },1000)
+        function confirm_upgrade_earn_money(){
+            if(money >= The_money_needed){
+                money -= The_money_needed
+                The_money_needed = Math.floor(The_money_needed * 1.6);
+                add_money += 1
+                document.getElementById("upgrade_earn_money").textContent = "按一次賺" + add_money+"$"
+                document.getElementById("upgrade_earn_money_button").textContent = "升級(費用:" + The_money_needed +"$)"
+                document.getElementById("money").textContent = "按我賺" + add_money + "$"
+                document.getElementById("show_money").textContent = "你有" + money + "$"
             }
-
-        }
-    }
-
-    if(empty.length===0) return;
-
-    const spot = empty[
-        Math.floor(Math.random()*empty.length)
-    ];
-
-    board[spot.r][spot.c] =
-        Math.random()<0.9 ? 2 : 4;
-}
-
-function addObstacle(){
-
-    const empty=[];
-
-    for(let r=0;r<size;r++){
-        for(let c=0;c<size;c++){
-
-            if(board[r][c]===0){
-                empty.push({r,c});
-            }
-
-        }
-    }
-
-    if(empty.length===0) return;
-
-    const spot =
-        empty[Math.floor(Math.random()*empty.length)];
-
-    board[spot.r][spot.c]=BLOCK;
-}
-
-function drawBoard(){
-
-    const grid=document.getElementById("grid");
-
-    grid.innerHTML="";
-
-    for(let r=0;r<size;r++){
-
-        for(let c=0;c<size;c++){
-
-            const value=board[r][c];
-
-            const cell=document.createElement("div");
-
-            cell.className="cell";
-
-            if(value===BLOCK){
-
-                cell.classList.add("block");
-                cell.textContent="🪨";
-
-            }else if(value!==0){
-
-                cell.textContent=value;
-                cell.classList.add("n"+value);
-
-            }
-
-            grid.appendChild(cell);
-        }
-    }
-}
-
-// 抽取出來的通用旋轉函式，可以旋轉任何二維陣列
-function rotateMatrix(matrix){
-    const newMatrix = Array(size).fill().map(()=>Array(size).fill(0));
-    for(let r=0;r<size;r++){
-        for(let c=0;c<size;c++){
-            newMatrix[c][size-r-1]=matrix[r][c];
-        }
-    }
-    return newMatrix;
-}
-
-function slide(row, rowIndex, currentMergedMap){
-
-    const result=[...row];
-    const blockPositions=[];
-
-    for(let i=0;i<size;i++){
-        if(row[i]===BLOCK){
-            blockPositions.push(i);
-        }
-    }
-
-    let start=0;
-
-    function processSegment(segment, startIndex){
-        const nums=segment.filter(v=>v!==0);
-        const merged=[];
-        const rowMergeFlags=Array(segment.length).fill(0);
-
-        for(let i=0;i<nums.length;i++){
-            if(nums[i]===nums[i+1]){
-                const newValue=nums[i]*2;
-                merged.push(newValue);
-                score+=newValue;
-                
-                // 標記在當前段落(segment)中，這個新產生的數字是合併而來的
-                rowMergeFlags[merged.length-1] = 1;
-                i++;
-            }else{
-                merged.push(nums[i]);
+            else{
+                alert("你的錢不夠!")
             }
         }
-
-        while(merged.length<segment.length){
-            merged.push(0);
-        }
-
-        // 將合併標記寫入對應的整列對應位置
-        for(let i=0;i<rowMergeFlags.length;i++){
-            currentMergedMap[rowIndex][startIndex+i] = rowMergeFlags[i];
-        }
-
-        return merged;
-    }
-
-    for(const blockIndex of [...blockPositions,size]){
-        const segment=[];
-        for(let i=start;i<blockIndex;i++){
-            if(row[i]!==BLOCK){
-                segment.push(row[i]);
+        function confirm_upgrade_per_second_earn_money(){
+            if(money >= The_money_needed2){
+                money -= The_money_needed2
+                The_money_needed2 = Math.floor(The_money_needed2 * 1.8);
+                per_second += 1
+                document.getElementById("upgrade_per_second").textContent = "每秒賺" + per_second +"$"
+                document.getElementById("upgrade_per_second_button").textContent = "升級(費用:" + The_money_needed2 +"$)"
+                document.getElementById("show_money").textContent = "你有" + money + "$"
+            }
+            else{
+                alert("你的錢不夠!")
             }
         }
-
-        const merged=processSegment(segment,start);
-
-        for(let i=0;i<merged.length;i++){
-            result[start+i]=merged[i];
-        }
-
-        if(blockIndex<size){
-            result[blockIndex]=BLOCK;
-        }
-
-        start=blockIndex+1;
-    }
-
-    return result;
-}
-
-function moveBoard(direction){
-
-    let temp = JSON.parse(JSON.stringify(board));
-    
-    // 初始化一個臨時的合併標記地圖
-    let tempMergedMap = emptyBoard();
-
-    const rotateCount={
-        left:0,
-        down:1,
-        right:2,
-        up:3
-    };
-
-    // 旋轉板面
-    for(let i=0;i<rotateCount[direction];i++){
-        temp=rotateMatrix(temp);
-        tempMergedMap=rotateMatrix(tempMergedMap);
-    }
-
-    // 進行滑動與合併，並一併傳入 tempMergedMap 紀錄合併位置
-    temp=temp.map((row,index)=>
-        slide(row, index, tempMergedMap)
-    );
-
-    // 逆向旋轉還原板面與合併地圖
-    for(let i=0;i<(4-rotateCount[direction])%4;i++){
-        temp=rotateMatrix(temp);
-        tempMergedMap=rotateMatrix(tempMergedMap);
-    }
-
-    // 將還原回正確視角的合併地圖存入全域變數
-    globalMergedMap = tempMergedMap;
-
-    return temp;
-}
-
-function removeBlocksNearMerges(){
-
-    const dirs=[
-        [1,0],
-        [-1,0],
-        [0,1],
-        [0,-1]
-    ];
-
-    // 遍歷整個地圖，尋找有發生合併(值為1)的座標
-    for(let r=0;r<size;r++){
-        for(let c=0;c<size;c++){
-            
-            if(globalMergedMap[r][c]===1){
-                
-                // 檢查四周是否有石頭，有的話將其清除(變為0)
-                for(const [dr,dc] of dirs){
-                    const nr=r+dr;
-                    const nc=c+dc;
-
-                    if(
-                        nr>=0 &&
-                        nr<size &&
-                        nc>=0 &&
-                        nc<size &&
-                        board[nr][nc]===BLOCK
-                    ){
-                        board[nr][nc]=0;
-                    }
-                }
-            }
-        }
-    }
-}
-
-function canMove(){
-
-    for(let r=0;r<size;r++){
-        for(let c=0;c<size;c++){
-
-            const value=board[r][c];
-
-            if(value===0) return true;
-
-            if(value===BLOCK) continue;
-
-            if(c<size-1 &&
-               board[r][c+1]===value)
-               return true;
-
-            if(r<size-1 &&
-               board[r+1][c]===value)
-               return true;
-        }
-    }
-
-    return false;
-}
-
-function move(direction){
-
-    const old=JSON.stringify(board);
-
-    const moved=moveBoard(direction);
-
-    if(JSON.stringify(moved)!==old){
-
-        board=moved;
-
-        // 此時 board 已經更新，且 globalMergedMap 的座標也是正確角度，可以順利炸開石頭！
-        removeBlocksNearMerges();
-
-        addNumber();
-
-        if(Math.random()<0.25){
-            addObstacle();
-        }
-
-        drawBoard();
-        updateUI();
-
-        if(!canMove()){
-
-            document.getElementById("message")
-                .textContent="遊戲結束！";
-
-        }else{
-
-            let highest=0;
-
-            for(let r=0;r<size;r++){
-                for(let c=0;c<size;c++){
-
-                    if(board[r][c]>highest){
-                        highest=board[r][c];
-                    }
-
-                }
-            }
-
-            if(highest>=2048){
-
-                document.getElementById("message")
-                .textContent=
-                "已達 "+highest+"！無限模式繼續中！";
-
-            }
-        }
-    }
-}
-
-function updateUI(){
-
-    document.getElementById("score")
-        .textContent=score;
-}
-
-function restartGame(){
-
-    document.getElementById("message")
-        .textContent="";
-
-    createBoard();
-}
-
-document.addEventListener("keydown",e=>{
-
-    const map={
-        ArrowLeft:"left",
-        ArrowRight:"right",
-        ArrowUp:"up",
-        ArrowDown:"down"
-    };
-
-    if(map[e.key]){
-
-        move(map[e.key]);
-
-    }
-
-});
-
-createBoard();
-
-</script>
-
+    </script>
 </body>
 </html>
