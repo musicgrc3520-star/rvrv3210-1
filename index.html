@@ -1,202 +1,159 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>rvrv3210網站</title>
-    <link rel="shortcut icon" href="game/66666.ico">
+    <link rel="icon" sizes="400x500" href="loge.jpg">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Microsoft JhengHei", sans-serif;
-        }
-
-        body {
-            background-color: #f4f4f4;
-            overflow-x: hidden;
-        }
-
-        /* --- 2. 開場遮罩層 (Loader) --- */
-        .loader-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000; /* 黑色背景營造電影感 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            /* 動畫：3.5秒後淡出消失 */
-            animation: wrapperFadeOut 1s forwards 3.5s;
-        }
-
-        .intro-box {
-            text-align: center;
-        }
-
-        /* Logo 圖片動畫 */
-        .loader-logo {
-            width: 120px; /* 根據你的圖片調整大小 */
-            opacity: 0;
-            /* 動畫：0.5秒後開始淡入，持續1.5秒 */
-            animation: logoEnter 1.5s ease-out forwards 0.5s;
-        }
-
-        /* 標語文字容器 */
-        .intro-text {
-            margin-top: 25px;
-            color: white;
-            overflow: hidden; /* 確保文字滑入時有被切掉的效果 */
-        }
-
-        .slogan {
-            font-size: 1.8rem;
-            font-weight: 300;
-            letter-spacing: 8px;
-            opacity: 0;
-            /* 動畫：1.2秒後開始滑入 */
-            animation: textSlideUp 1.2s cubic-bezier(0.2, 0.6, 0.2, 1) forwards 1.2s;
-        }
-
-        .sub-text {
-            font-size: 0.9rem;
-            margin-top: 10px;
-            color: #888;
-            opacity: 0;
-            /* 動畫：最後才淡淡浮現 */
-            animation: fadeInOnly 1s forwards 2.2s;
-        }
-
-        /* --- 3. 網頁主體內容 (Hero) --- */
-        .hero-section {
-            position: relative;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        .hero-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* 這裡換成你的背景圖片網址 */
-            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
-                        url('1111.png') center/cover;
-            /* 動畫：緩慢縮放 */
-            animation: backgroundZoom 20s infinite alternate;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            color: white;
-            text-align: center;
-        }
-
-        /* --- 4. 動畫定義 (Keyframes) --- */
-
-        /* Logo 淡入並縮放 */
-        @keyframes logoEnter {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        /* 文字由下往上滑入，帶有字距變窄效果 */
-        @keyframes textSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(100%);
-                letter-spacing: 20px;
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-                letter-spacing: 8px;
-            }
-        }
-
-        /* 單純淡入 */
-        @keyframes fadeInOnly {
-            to { opacity: 1; }
-        }
-
-        /* 整個遮罩層消失 */
-        @keyframes wrapperFadeOut {
-            to {
-                opacity: 0;
-                visibility: hidden;
-            }
-        }
-
-        /* 背景圖縮放 */
-        @keyframes backgroundZoom {
-            from { transform: scale(1); }
-            to { transform: scale(1.15); }
-        }
-        .h1-1{
-            color: #ffe100;
-            /*width: 320px;*/
-            box-shadow: inset 10px 20px 5px #0005;
-            text-align: center;
-            background-color:#296b68
-        }
         body{
-            background-color:#11ddbb
+            background-color: #00b0cb;  
         }
-        button{
-            border-radius:10px ;
-            background-color: #1eff00;
+        header{
+            text-align:center;
+            color:#ffffff;
+            background:linear-gradient(to right,
+            #ff0000,
+            #ff8800,
+            #ffff00,
+            #00ff00,
+            #00ffff,
+            #0000ff,
+            #aa00aa,
+            #0000ff,
+            #00ffff,
+            #00ff00,
+            #ffff00,
+            #ff8800,
+            #ff0000);
+            background-size: 400%;
+            white-space: nowrap; 
+            overflow: hidden; 
+            animation: rainbow 15s linear infinite;            
+        }
+        main{
+            text-align:center;
+            background-color: #000;
+            color: #fff;
+            animation: Black_to_White_to_Black 10s infinite; 
+            box-shadow: 10px 10px 10px 0px #777;
+        }
+        footer{
+            background: linear-gradient(to right,#ffffff,#000000);
+            text-align:center;
+            background-size: 200%;
+            animation: Black_and_white 2s infinite; 
+                      
+        }
+        footer button{
+            font-size: 25px;
+            color: #fff;
+            background: linear-gradient(to right,#ff0000,#ff8800,#ffff00,#00ff00,#00ffff,#0000ff,#aa00aa);
+            border-radius: 20px;   
+            transition: 1s;
+            text-align:center;
+        }
+        footer button:hover{
+            color: #000;           
+        }
+        nav button{
+            border-radius: 20px;
+            background: linear-gradient(to right,#000000,#ffffff);
+            color: #eeff00;
+            background-size: 200%;
+            transition: 1s;
+        }
+        nav button:hover{
+            font-size: 25px;
+            background-position:100%;
             color: #ff0000;
         }
-        button:hover{
-            border-radius:10px ;
-            background-color: #2f6428;
-            color: #ff0000;
+        main button{
+            color: #fff;
+            background-color: #000;
+            border-radius: 20px;
         }
-        </style>
+        nav{
+            background-color: linear-gradient(to right,#ffffff,#000000);
+            animation: Black_to_White_to_Black 2s infinite; 
+        }
+        main div{
+            color: #000;
+            background: linear-gradient(to right bottom,#ff0000,#ff8800);
+            border: 10px #000 groove;
+        }
+        b{
+            font-size: 35px;
+        }
+        b img{
+            transform: translate(0,4px);
+        }
+        @keyframes Black_to_White_to_Black{
+            0%{
+                color: #fff;
+                background-color: #000;
+            }
+            50%{
+                color: #000;
+                background-color: #fff;
+            }
+            100%{
+                color: #fff;
+                background-color: #000;           
+            }
+        }
+        @keyframes rainbow{
+            0%{
+                background-position:0%
+            }
+            50%{
+                background-position:400%
+            }
+            100%{
+                background-position:800%
+            }
+        }
+        @keyframes Black_and_white{
+            0%{
+                background-position:0%
+            }
+            50%{
+                background-position:100%
+            }
+            100%{
+                background-position:0%
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="loader-wrapper">
-        <div class="intro-box">
-            <img src="game/12345.png" alt="Logo" class="loader-logo">            
-            <div class="intro-text">
-                <h2 class="slogan">rvrv3210</h2>
-                <p class="sub-text">知名yt主播</p>
-            </div>
-        </div>
-    </div> 
-    <header class="hero-section">
-        <div class="hero-bg"></div>
-        <div class="hero-content">
-        <h1 class="h1-1">歡迎來到rvrv3210網站</h1>
-        <h2>向下滑更多</h2>
-        </div>
+    <header>
+        <b>歡迎來到rvrv3210網站<img src="loge.jpg"></b>      
     </header>
+    <nav>
+        <a href="#homepage"><button>首頁</button></a>
+    </nav>
+    <main>
+        <h2 id="homepage">首頁</h2>
+        <hr>
+        <div>
+            <h3>最新消息</h3>
+            新的影片上架啦!主題不是拍mc，額是用ai創音樂!<br>
+            網址:<a href="https://www.youtube.com/watch?v=5kb66A4-ZvU" target="_blank"><button>https://www.youtube.com/watch?v=5kb66A4-ZvU</button></a>
+            <hr>
+        </div>
+        <h2>遊戲</h2>
+        <a href="game.html"><button>大亨遊戲</button></a>
+    </main>
+    <br>
     <footer>
-        <div style="display: flex; justify-content: center; align-items: center;">
-            <h2>我的遊戲:</h2>
-            <a target="_blank" href="game/game.html">
-            <button>
-                <h1 id="h1-2">2048-2</h1>
-            </button>
-            </a>
-        </div>
-        <div style="display: flex; justify-content: center; align-items: center;">
-            <a target="_blank" href="https://www.youtube.com/channel/UCGQrk3LofChvqrj4Y7XpYYw?sub_confirmation=1">
-            <button>
-                <h1 id="h1-2">點我訂閱!</h1>
-            </button>
-            </a>
-        </div>
+        <a href="https://www.youtube.com/channel/UCGQrk3LofChvqrj4Y7XpYYw" target="_blank"><button>前往我的yt</button></a>
     </footer>
+    <script>
+        alert("歡迎來到 rvrv3210 網站（記得訂閱)")
+        document.addEventListener("keydown", function(event) {
+            console.log("你按了：" + event.key);
+        });
+    </script>
 </body>
 </html>
