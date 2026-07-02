@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>網頁聊天室</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { width: 100vw; height: 100vh; background: white;  box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        .hidden { display: none !important; }
+
+        /* 登入畫面 */
+        #login-panel { padding: 30px; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        #login-panel h2 { text-align: center; margin-bottom: 15px; color: #333; }
+        input { padding: 10px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        button { padding: 10px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: bold; transition: 0.2s; margin-top: 4px; }
+        
+        .btn-primary { background-color: #0084ff; color: white; }
+        .btn-secondary { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-guest { background-color: #6c757d; color: white; }
+        button:hover { opacity: 0.9; }
+        .divider { height: 1px; background: #ddd; margin: 15px 0; }
+
+        /* 聊天畫面 */
+        #chat-panel { flex: 1; display: flex; flex-direction: column; height: 100%; }
+        .chat-header { background: #0084ff; color: white; padding: 15px; text-align: center; font-weight: bold; }
+        #chat-box { flex: 1; padding: 15px; overflow-y: auto; background: #efeae2; display: flex; flex-direction: column; gap: 10px; }
+        
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 75%; }
+        .msg-wrapper.self { align-self: flex-end; align-items: flex-end; }
+        .msg-wrapper.other { align-self: flex-start; align-items: flex-start; }
+        .msg-wrapper.system { align-self: center; text-align: center; max-width: 100%; color: #777; font-size: 12px; margin: 5px 0; }
+
+        .sender-name { font-size: 11px; color: #666; margin-bottom: 2px; }
+        .bubble { padding: 8px 12px; border-radius: 8px; font-size: 14px; word-break: break-all; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .self .bubble { background-color: #d9fdd3; color: #000; border-top-right-radius: 0; }
+        .other .bubble { background-color: #ffffff; color: #000; border-top-left-radius: 0; }
+
+        .input-box { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd; }
+        #msg-input { flex: 1; border: none; padding: 10px; border-radius: 20px; outline: none; padding-left: 15px; }
+        #send-btn { background: #0084ff; color: white; border: none; padding: 0 15px; margin-left: 8px; border-radius: 50px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-panel">
+        <h2>聊天室系統</h2>
+        <input type="text" id="username" placeholder="帳號">
+        <input type="password" id="password" placeholder="密碼 (或舊密碼)">
+
+        
+        <button class="btn-primary" onclick="authAction('LOGIN')">登入</button>
+        <button class="btn-secondary" onclick="authAction('REGISTER')">線上註冊</button>
+        
+        <div class="divider"></div>
+        
+        <input type="text" id="guest-name" placeholder="訪客暱稱" value="訪客">
+        <button class="btn-guest" onclick="authAction('GUEST')">訪客快速進入</button>
+    </div>
+
+    <div id="chat-panel" class="hidden">
+        <div class="chat-header" id="chat-title">聊天室</div>
+        <div id="chat-box"></div>
+        <div class="input-box">
+            <input type="text" id="msg-input" placeholder="輸入訊息..." onkeydown="if(event.key==='Enter') sendChat()">
+            <button id="send-btn" onclick="sendChat()">傳送</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let ws;
+    let myNickname = "";
+
+    function connectWS() {
+        return new Promise((resolve) => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                resolve(true);
+                return;
+            }
+            ws = new WebSocket("ws://192.168.1.112:55555");
+            ws.onopen = () => resolve(true);
+            ws.onerror = () => {
+                alert("無法連線到伺服器，請確認伺服器已啟動！");
+                resolve(false);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === "REG_SUCCESS") {
+                    alert("註冊成功！現在可以登入了。");
+                } else if (data.type === "REG_FAIL" || data.type === "AUTH_FAIL" || data.type === "PWD_FAIL") {
+                    alert(data.msg);
+                } else if (data.type === "AUTH_SUCCESS") {
+                    myNickname = data.nickname;
+                    document.getElementById("login-panel").classList.add("hidden");
+                    document.getElementById("chat-panel").classList.remove("hidden");
+                    document.getElementById("chat-title").innerText = `聊天室 (${myNickname})`;
+                } else if (data.type === "SYSTEM") {
+                    appendSystemMsg(data.msg);
+                } else if (data.type === "MSG") {
+                    appendChatBubble(data.sender, data.content);
+                }
+            };
+        });
+    }
+
+    async function authAction(actionType) {
+        const connected = await connectWS();
+        if (!connected) return;
+
+        const u = document.getElementById("username").value.trim();
+        const p = document.getElementById("password").value.trim();
+
+        if (actionType === "LOGIN" || actionType === "REGISTER") {
+            ws.send(JSON.stringify({ action: actionType, username: u, password: p }));
+        } else if (actionType === "GUEST") {
+            const g = document.getElementById("guest-name").value.trim();
+            ws.send(JSON.stringify({ action: "GUEST", guest_name: g }));
+        }
+    }
+
+    function sendChat() {
+        const input = document.getElementById("msg-input");
+        const msg = input.value.trim();
+        if (msg && ws) {
+            ws.send(JSON.stringify({ action: "CHAT", content: msg }));
+            input.value = "";
+        }
+    }
+
+    function appendChatBubble(sender, content) {
+        const chatBox = document.getElementById("chat-box");
+        const isSelf = (sender === myNickname);
+        const wrapper = document.createElement("div");
+        wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
+
+        if (!isSelf) {
+            const nameEl = document.createElement("div");
+            nameEl.className = "sender-name";
+            nameEl.innerText = sender;
+            wrapper.appendChild(nameEl);
+        }
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.innerText = content;
+        
+        wrapper.appendChild(bubble);
+        chatBox.appendChild(wrapper);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendSystemMsg(msg) {
+        const chatBox = document.getElementById("chat-box");
+        const wrapper = document.createElement("div");
+        wrapper.className = "msg-wrapper system";
+        wrapper.innerText = msg;
+        chatBox.appendChild(wrapper);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+</body>
+</html>
