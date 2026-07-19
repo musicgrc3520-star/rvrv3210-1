@@ -446,7 +446,7 @@
             try:
                 speed_val = int(document.querySelector("#speedInput").value)
             except:
-                speed_val = 50
+                speed_val = 101
             if speed_val < 1: speed_val = 1
             if speed_val > 101: speed_val = 101
             document.querySelector("#speedInput").value = str(speed_val)
