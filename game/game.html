@@ -85,8 +85,8 @@
         </div>
 
         <div class="setting-row">
-            <label for="ansSpeedInput">解答速度 (1-100):</label>
-            <input type="number" id="ansSpeedInput" value="50" min="1" max="100">
+            <label for="ansSpeedInput">解答速度 (1-101):</label>
+            <input type="number" id="ansSpeedInput" value="50" min="1" max="101">
         </div>
 
         <div class="panel-divider"></div>
@@ -347,7 +347,7 @@
                 userAnsSpeed = parseInt(document.getElementById('ansSpeedInput').value);
             } catch(e) { userAnsSpeed = 50; }
             if (userAnsSpeed < 1) userAnsSpeed = 1;
-            if (userAnsSpeed > 100) userAnsSpeed = 100;
+            if (userAnsSpeed > 101) userAnsSpeed = 101;
             
             let ansDelay = Math.max(1, Math.floor((101 - userAnsSpeed) * 0.6));
 
