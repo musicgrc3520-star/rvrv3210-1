@@ -2,14 +2,14 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>生成迷宮</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成迷宮 - 專業遊玩與下載版</title>
     
     <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
 
     <style>
-        body { margin: 0; padding: 0; background-color: #1a1a24; font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; color: white; user-select: none; overflow: hidden; }
+        body { margin: 0; padding: 0; background-color: #1a1a24; font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; color: white; user-select: none; }
         
         /* 頂部主要控制列 */
         #main-action-bar {
@@ -25,7 +25,7 @@
         
         #playBtn { background-color: #ff9f43; color: #111; font-size: 15px; box-shadow: 0 0 10px rgba(255,159,67,0.4); }
         #playBtn:hover { background-color: #ffb066; }
-        #playBtn.playing-mode { background-color: #ee5253; color: white; box-shadow: 0 0 10px rgba(238,82,83,0.4); z-index: 1001; }
+        #playBtn.playing-mode { background-color: #ee5253; color: white; box-shadow: 0 0 10px rgba(238,82,83,0.4); }
 
         #downloadBtn { background-color: #00a8ff; color: #fff; }
         #downloadBtn:hover { background-color: #0088cc; }
@@ -63,25 +63,6 @@
             margin-top: 20px; background: rgba(0, 0, 0, 0.8); padding: 10px 25px; border-radius: 6px; color: #00ff88; font-family: monospace; font-size: 18px; font-weight: bold; border: 1px solid #00ff88; text-align: center; letter-spacing: 1px;
         }
         .status-text { font-size: 13px; color: #ffbc00; margin-bottom: 3px; font-weight: normal; }
-
-        /* 📱 手機專用四角虛擬鍵盤樣式 */
-        .mobile-btn {
-            position: fixed; width: 80px; height: 80px; background: rgba(255, 159, 67, 0.25); color: #fff;
-            border: 2px solid rgba(255, 159, 67, 0.6); border-radius: 50%; font-size: 32px;
-            display: flex; align-items: center; justify-content: center; z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-            touch-action: manipulation; transition: background 0.1s, transform 0.1s;
-        }
-        .mobile-btn:active { background: rgba(255, 159, 67, 0.7); transform: scale(0.9); }
-        
-        /* 依據要求指定位置：左上->上, 左下->下, 右上->右, 右下->左 */
-        #btn-up    { top: 20px; left: 20px; }
-        #btn-down  { bottom: 20px; left: 20px; }
-        #btn-right { top: 20px; right: 20px; }
-        #btn-left  { bottom: 20px; right: 20px; }
-
-        /* 預設隱藏手機按鈕 */
-        .mobile-controls { display: none; }
     </style>
 </head>
 <body>
@@ -100,12 +81,12 @@
         
         <div class="setting-row">
             <label for="speedInput">生成速度 (1-101):</label>
-            <input type="number" id="speedInput" value="101" min="1" max="101">
+            <input type="number" id="speedInput" value="50" min="1" max="101">
         </div>
 
         <div class="setting-row">
-            <label for="ansSpeedInput">解答速度 (1-101):</label>
-            <input type="number" id="ansSpeedInput" value="50" min="1" max="101">
+            <label for="ansSpeedInput">解答速度 (1-100):</label>
+            <input type="number" id="ansSpeedInput" value="50" min="1" max="100">
         </div>
 
         <div class="panel-divider"></div>
@@ -125,13 +106,6 @@
         歡迎來到rvrv3210網
     </div>
 
-    <div id="mobileControls" class="mobile-controls">
-        <button id="btn-up" class="mobile-btn">⬆</button>
-        <button id="btn-down" class="mobile-btn">⬇</button>
-        <button id="btn-right" class="mobile-btn">⮕</button>
-        <button id="btn-left" class="mobile-btn">⬅</button>
-    </div>
-
     <script>
         let canvas, ctx;
         let mazeMatrix = [];
@@ -148,16 +122,11 @@
         let isShowingAnswer = false; 
         let solutionPath = []; 
 
-        // 偵測是否為手機/行動裝置
-        defIsMobile = () => {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 800 && window.innerHeight <= 1000);
-        };
-
         function initGame() {
             canvas = document.getElementById('mazeCanvas');
             ctx = canvas.getContext('2d');
 
-            // 鍵盤移動監聽 (電腦版)
+            // 鍵盤移動監聽
             document.addEventListener('keydown', (e) => {
                 if (!isPlayingMode || mazeMatrix.length === 0 || isGenerating || isShowingAnswer) return; 
 
@@ -172,18 +141,6 @@
                     movePlayer(dx, dy);
                 }
             });
-
-            // 手機按鈕點擊事件監聽 (依照指定方向對應)
-            document.getElementById('btn-up').addEventListener('touchstart', (e) => { e.preventDefault(); movePlayer(0, -1); });
-            document.getElementById('btn-down').addEventListener('touchstart', (e) => { e.preventDefault(); movePlayer(0, 1); });
-            document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); movePlayer(1, 0); });
-            document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); movePlayer(-1, 0); });
-
-            // 防止點擊產生縮放或延遲
-            document.getElementById('btn-up').addEventListener('click', (e) => { movePlayer(0, -1); });
-            document.getElementById('btn-down').addEventListener('click', (e) => { movePlayer(0, 1); });
-            document.getElementById('btn-right').addEventListener('click', (e) => { movePlayer(1, 0); });
-            document.getElementById('btn-left').addEventListener('click', (e) => { movePlayer(-1, 0); });
 
             // 控制設定面板的開關
             document.getElementById('settingsToggleBtn').addEventListener('click', () => {
@@ -203,7 +160,6 @@
             const playBtn = document.getElementById('playBtn');
             const panel = document.getElementById('control-panel');
             const settingsToggleBtn = document.getElementById('settingsToggleBtn');
-            const mobileUI = document.getElementById('mobileControls');
 
             if (!isPlayingMode) {
                 // 進入遊玩模式
@@ -215,20 +171,16 @@
                 panel.classList.add('hidden');
                 settingsToggleBtn.disabled = true;
 
-                // 如果是手機，秀出控制按鈕
-                if (defIsMobile()) {
-                    mobileUI.style.display = 'block';
-                }
-
                 // 初始化玩家位置與歷史紀錄
                 playerX = 1;
                 playerY = 1;
                 playerPathHistory = [];
+                // 起點自動算第一步踩過的位置
                 playerPathHistory.push({r: 1, c: 1});
 
                 drawMaze();
             } else {
-                // 離開遊玩模式
+                // 離開遊玩模式 (再按一次刪除橘色方塊和藍色方塊，並把設定顯示)
                 isPlayingMode = false;
                 playBtn.innerText = "🎮 開始遊玩";
                 playBtn.classList.remove('playing-mode');
@@ -237,10 +189,7 @@
                 panel.classList.remove('hidden');
                 settingsToggleBtn.disabled = false;
 
-                // 隱藏手機操控按鈕
-                mobileUI.style.display = 'none';
-
-                // 重設玩家位置回起點原位，讓綠色方塊正確回歸原點
+                // 【修正核心】重設玩家位置回起點原位，讓綠色方塊正確回歸原點
                 playerX = 1;
                 playerY = 1;
 
@@ -251,8 +200,6 @@
         }
 
         function movePlayer(dx, dy) {
-            if (!isPlayingMode || mazeMatrix.length === 0 || isGenerating || isShowingAnswer) return; 
-            
             let nextX = playerX + dx;
             let nextY = playerY + dy;
 
@@ -317,7 +264,7 @@
                 ctx.fillRect(playerX * cellSize, playerY * cellSize, cellSize, cellSize);
                 ctx.shadowBlur = 0;
             } else {
-                // 非遊玩模式，繪製原本的綠色展示點
+                // 非遊玩模式，繪製原本的綠色展示點（此時玩家座標已被回歸至 1, 1）
                 if (!isGenerating) {
                     ctx.fillStyle = "#00ff88";
                     ctx.shadowColor = "#00ff88";
@@ -330,9 +277,7 @@
 
         function setupCanvas(size) {
             mazeSize = size;
-            
-            // 彈性調整畫面大小以符合手機螢幕
-            let maxCanvasSize = Math.min(window.innerWidth - 40, window.innerHeight - 220, 650); 
+            let maxCanvasSize = 650; 
             cellSize = Math.floor(maxCanvasSize / size);
             if (cellSize < 3) cellSize = 3; 
 
@@ -348,7 +293,6 @@
             playBtn.innerText = "🎮 開始遊玩";
             playBtn.classList.remove('playing-mode');
             document.getElementById('settingsToggleBtn').disabled = false;
-            document.getElementById('mobileControls').style.display = 'none';
 
             solutionPath = [];
             isShowingAnswer = false;
@@ -403,7 +347,7 @@
                 userAnsSpeed = parseInt(document.getElementById('ansSpeedInput').value);
             } catch(e) { userAnsSpeed = 50; }
             if (userAnsSpeed < 1) userAnsSpeed = 1;
-            if (userAnsSpeed > 101) userAnsSpeed = 101;
+            if (userAnsSpeed > 100) userAnsSpeed = 100;
             
             let ansDelay = Math.max(1, Math.floor((101 - userAnsSpeed) * 0.6));
 
@@ -496,13 +440,13 @@
                 document.querySelector("#sizeInput").value = str(size)
                 
             if size < 5: size = 5
-            if size > 1001: size = 1001 
+            if size > 1001: size = 1001  
             document.querySelector("#sizeInput").value = str(size)
             
             try:
                 speed_val = int(document.querySelector("#speedInput").value)
             except:
-                speed_val = 101
+                speed_val = 50
             if speed_val < 1: speed_val = 1
             if speed_val > 101: speed_val = 101
             document.querySelector("#speedInput").value = str(speed_val)
