@@ -1,97 +1,531 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>rvrv3210-大亨遊戲</title>
-    <link rel="icon" sizes="400x500" href="loge.jpg">
+    <title>生成迷宮</title>
+    
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
     <style>
-body{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-}
-        #money{
-            border: 10px double #555;
-            border-radius: 50px;
-            background-color: #ccc;
-            color: #000;
-            transition: 1s;
-            font-size: 30px;
-            transform: scale(100%);
-        }
-        #money:hover{
-            color: #ffff00;
-            border: 5px double #ffcc00;
-        }
-        #money:active{
-            transform: scale(80%);
-            transition: 1s;
-        }
-        div{
-            text-align:center;
-            border-radius: 10px;
-            border:5px solid #000;
-            background-color: #eee;
-
+        body { margin: 0; padding: 0; background-color: #1a1a24; font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; color: white; user-select: none; }
+        
+        /* 頂部主要控制列 */
+        #main-action-bar {
+            margin-bottom: 15px; display: flex; gap: 12px; align-items: center; justify-content: center; z-index: 10;
         }
 
+        button { font-weight: bold; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        button:disabled { background-color: #555 !important; color: #888 !important; cursor: not-allowed; }
+
+        /* 各按鈕主題顏色 */
+        #settingsToggleBtn { background-color: #6c757d; color: white; }
+        #settingsToggleBtn:hover { background-color: #5a6268; }
+        
+        #playBtn { background-color: #ff9f43; color: #111; font-size: 15px; box-shadow: 0 0 10px rgba(255,159,67,0.4); }
+        #playBtn:hover { background-color: #ffb066; }
+        #playBtn.playing-mode { background-color: #ee5253; color: white; box-shadow: 0 0 10px rgba(238,82,83,0.4); }
+
+        #downloadBtn { background-color: #00a8ff; color: #fff; }
+        #downloadBtn:hover { background-color: #0088cc; }
+
+        #genBtn { background-color: #00ff88; color: #111; }
+        #genBtn:hover { background-color: #00cc6e; }
+        
+        #ansBtn { background-color: #ffdd59; color: #111; }
+        #ansBtn:hover { background-color: #e5c543; }
+
+        /* 彈出式設定面板樣式 */
+        #control-panel {
+            background: rgba(30, 33, 41, 0.98); padding: 20px; border-radius: 8px; 
+            display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5); border: 1px solid #4a4a5a;
+            position: absolute; top: 75px; transition: 0.3s ease-in-out; opacity: 1; z-index: 100;
+        }
+        #control-panel.hidden { display: none !important; opacity: 0; pointer-events: none; }
+        
+        .setting-row { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
+        .setting-row label { font-size: 14px; font-weight: bold; color: #ccc; }
+        input[type="number"] { width: 80px; padding: 6px; border-radius: 4px; border: 1px solid #555; background: #2b2b36; color: white; font-weight: bold; text-align: center; font-size: 14px; }
+        
+        .panel-divider { width: 100%; border-top: 1px solid #3a3a4a; margin: 5px 0; }
+        .panel-buttons { display: flex; gap: 10px; width: 100%; justify-content: center; }
+
+        /* 迷宮區域 */
+        #maze-wrapper {
+            background-color: #0e0e12; padding: 10px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #3a3a4a; position: relative;
+        }
+        canvas { display: block; background-color: #000; }
+
+        /* HUD */
+        #hud {
+            margin-top: 20px; background: rgba(0, 0, 0, 0.8); padding: 10px 25px; border-radius: 6px; color: #00ff88; font-family: monospace; font-size: 18px; font-weight: bold; border: 1px solid #00ff88; text-align: center; letter-spacing: 1px;
+        }
+        .status-text { font-size: 13px; color: #ffbc00; margin-bottom: 3px; font-weight: normal; }
     </style>
 </head>
 <body>
-    <h1 id="show_money">你有10$</h1>
-    <button  onclick="renew_money()" id="money">按我賺0$</button>
-    <div style="width:1000px;
-    height:500px;">
-        <h2>升級</h2>
-        <h3 id="upgrade_earn_money">按一次賺0$</h3>
-        <button id="upgrade_earn_money_button" onclick="confirm_upgrade_earn_money()">升級(費用:10$)</button>
-        <h3 id="upgrade_per_second">每秒賺0$</h3>
-        <button id="upgrade_per_second_button" onclick="confirm_upgrade_per_second_earn_money()">升級(費用:15$)</button>      
+
+    <div id="main-action-bar">
+        <button id="settingsToggleBtn">⚙️ 設定選項</button>
+        <button id="playBtn" disabled>🎮 開始遊玩</button>
+        <button id="downloadBtn" disabled>💾 下載迷宮地圖</button>
     </div>
+
+    <div id="control-panel">
+        <div class="setting-row">
+            <label for="sizeInput">迷宮大小 (填奇數):</label>
+            <input type="number" id="sizeInput" value="21" min="5" max="1001" step="2">
+        </div>
+        
+        <div class="setting-row">
+            <label for="speedInput">生成速度 (1-101):</label>
+            <input type="number" id="speedInput" value="50" min="1" max="101">
+        </div>
+
+        <div class="setting-row">
+            <label for="ansSpeedInput">解答速度 (1-100):</label>
+            <input type="number" id="ansSpeedInput" value="50" min="1" max="100">
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <div class="panel-buttons">
+            <button id="genBtn">重新生成迷宮</button>
+            <button id="ansBtn" disabled>顯示答案</button>
+        </div>
+    </div>
+
+    <div id="maze-wrapper">
+        <canvas id="mazeCanvas"></canvas>
+    </div>
+    
+    <div id="hud">
+        <div id="statusLabel" class="status-text"></div>
+        歡迎來到rvrv3210網
+    </div>
+
     <script>
-        let money = 10
-        let add_money = 0
-        let The_money_needed = 10
-        let per_second = 0
-        let The_money_needed2 = 15
-        function renew_money(){
-            money += add_money
-            document.getElementById("show_money").textContent = "你有" + money + "$"
+        let canvas, ctx;
+        let mazeMatrix = [];
+        let mazeSize = 21;
+        let cellSize = 20; 
+
+        // 遊玩模式相關變數
+        let isPlayingMode = false;
+        let playerX = 1;
+        let playerY = 1;
+        let playerPathHistory = []; // 儲存玩家踩過的藍色方塊座標資訊
+
+        let isGenerating = false; 
+        let isShowingAnswer = false; 
+        let solutionPath = []; 
+
+        function initGame() {
+            canvas = document.getElementById('mazeCanvas');
+            ctx = canvas.getContext('2d');
+
+            // 鍵盤移動監聽
+            document.addEventListener('keydown', (e) => {
+                if (!isPlayingMode || mazeMatrix.length === 0 || isGenerating || isShowingAnswer) return; 
+
+                let dx = 0, dy = 0;
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') dy = -1;
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') dy = 1;
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft') dx = -1;
+                if (e.code === 'KeyD' || e.code === 'ArrowRight') dx = 1;
+
+                if (dx !== 0 || dy !== 0) {
+                    e.preventDefault(); 
+                    movePlayer(dx, dy);
+                }
+            });
+
+            // 控制設定面板的開關
+            document.getElementById('settingsToggleBtn').addEventListener('click', () => {
+                if (isPlayingMode) return;
+                const panel = document.getElementById('control-panel');
+                panel.classList.toggle('hidden');
+            });
+
+            // 綁定遊玩按鈕
+            document.getElementById('playBtn').addEventListener('click', () => {
+                togglePlayMode();
+            });
         }
-        setInterval(function(){
-            money += per_second
-            document.getElementById("show_money").textContent = "你有" + money + "$"
-        },1000)
-        function confirm_upgrade_earn_money(){
-            if(money >= The_money_needed){
-                money -= The_money_needed
-                The_money_needed = Math.floor(The_money_needed * 1.6);
-                add_money += 1
-                document.getElementById("upgrade_earn_money").textContent = "按一次賺" + add_money+"$"
-                document.getElementById("upgrade_earn_money_button").textContent = "升級(費用:" + The_money_needed +"$)"
-                document.getElementById("money").textContent = "按我賺" + add_money + "$"
-                document.getElementById("show_money").textContent = "你有" + money + "$"
-            }
-            else{
-                alert("你的錢不夠!")
+
+        // 切換遊玩模式主邏輯
+        function togglePlayMode() {
+            const playBtn = document.getElementById('playBtn');
+            const panel = document.getElementById('control-panel');
+            const settingsToggleBtn = document.getElementById('settingsToggleBtn');
+
+            if (!isPlayingMode) {
+                // 進入遊玩模式
+                isPlayingMode = true;
+                playBtn.innerText = "❌ 結束遊玩 (清除紀錄)";
+                playBtn.classList.add('playing-mode');
+                
+                // 隱藏設定面板與設定按鈕停用
+                panel.classList.add('hidden');
+                settingsToggleBtn.disabled = true;
+
+                // 初始化玩家位置與歷史紀錄
+                playerX = 1;
+                playerY = 1;
+                playerPathHistory = [];
+                // 起點自動算第一步踩過的位置
+                playerPathHistory.push({r: 1, c: 1});
+
+                drawMaze();
+            } else {
+                // 離開遊玩模式 (再按一次刪除橘色方塊和藍色方塊，並把設定顯示)
+                isPlayingMode = false;
+                playBtn.innerText = "🎮 開始遊玩";
+                playBtn.classList.remove('playing-mode');
+                
+                // 顯示設定面板與恢復設定按鈕
+                panel.classList.remove('hidden');
+                settingsToggleBtn.disabled = false;
+
+                // 【修正核心】重設玩家位置回起點原位，讓綠色方塊正確回歸原點
+                playerX = 1;
+                playerY = 1;
+
+                // 清空遊玩歷史
+                playerPathHistory = [];
+                drawMaze();
             }
         }
-        function confirm_upgrade_per_second_earn_money(){
-            if(money >= The_money_needed2){
-                money -= The_money_needed2
-                The_money_needed2 = Math.floor(The_money_needed2 * 1.8);
-                per_second += 1
-                document.getElementById("upgrade_per_second").textContent = "每秒賺" + per_second +"$"
-                document.getElementById("upgrade_per_second_button").textContent = "升級(費用:" + The_money_needed2 +"$)"
-                document.getElementById("show_money").textContent = "你有" + money + "$"
-            }
-            else{
-                alert("你的錢不夠!")
+
+        function movePlayer(dx, dy) {
+            let nextX = playerX + dx;
+            let nextY = playerY + dy;
+
+            if (mazeMatrix[nextY] && mazeMatrix[nextY][nextX] !== 1) {
+                playerX = nextX;
+                playerY = nextY;
+                
+                const alreadyVisited = playerPathHistory.some(pt => pt.r === nextY && pt.c === nextX);
+                if (!alreadyVisited) {
+                    playerPathHistory.push({r: nextY, c: nextX});
+                }
+                
+                drawMaze();
+
+                if (mazeMatrix[playerY][playerX] === 3) {
+                    setTimeout(() => {
+                        alert("🎉 恭喜！你控制橘色方塊成功抵達了終點！");
+                    }, 50);
+                }
             }
         }
+
+        function drawMaze() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. 繪製迷宮基礎地圖
+            for (let r = 0; r < mazeSize; r++) {
+                for (let c = 0; c < mazeSize; c++) {
+                    let type = mazeMatrix[r][c];
+                    
+                    if (type === 1) {
+                        ctx.fillStyle = "#3a3d52"; 
+                        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                    } else if (type === 2) {
+                        ctx.fillStyle = "#00a8ff"; 
+                        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                    } else if (type === 3) {
+                        ctx.fillStyle = "#ff4757"; 
+                        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                    } else if (type === 4) {
+                        ctx.fillStyle = "#ffdd59"; 
+                        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                    } else {
+                        ctx.fillStyle = "#0e0e12"; 
+                        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+
+            // 2. 如果是遊玩模式，疊加繪製「走過的藍色方塊痕跡」與「橘色方塊玩家」
+            if (isPlayingMode) {
+                ctx.fillStyle = "#22a6fe"; 
+                playerPathHistory.forEach(pt => {
+                    if (mazeMatrix[pt.r][pt.c] !== 3) {
+                        ctx.fillRect(pt.c * cellSize, pt.r * cellSize, cellSize, cellSize);
+                    }
+                });
+
+                ctx.fillStyle = "#ff7f50"; 
+                ctx.shadowColor = "#ff7f50";
+                ctx.shadowBlur = 4;
+                ctx.fillRect(playerX * cellSize, playerY * cellSize, cellSize, cellSize);
+                ctx.shadowBlur = 0;
+            } else {
+                // 非遊玩模式，繪製原本的綠色展示點（此時玩家座標已被回歸至 1, 1）
+                if (!isGenerating) {
+                    ctx.fillStyle = "#00ff88";
+                    ctx.shadowColor = "#00ff88";
+                    ctx.shadowBlur = 4;
+                    ctx.fillRect(playerX * cellSize, playerY * cellSize, cellSize, cellSize);
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+
+        function setupCanvas(size) {
+            mazeSize = size;
+            let maxCanvasSize = 650; 
+            cellSize = Math.floor(maxCanvasSize / size);
+            if (cellSize < 3) cellSize = 3; 
+
+            canvas.width = mazeSize * cellSize;
+            canvas.height = mazeSize * cellSize;
+            
+            playerX = 1;
+            playerY = 1;
+            playerPathHistory = [];
+            isPlayingMode = false;
+
+            const playBtn = document.getElementById('playBtn');
+            playBtn.innerText = "🎮 開始遊玩";
+            playBtn.classList.remove('playing-mode');
+            document.getElementById('settingsToggleBtn').disabled = false;
+
+            solutionPath = [];
+            isShowingAnswer = false;
+            document.getElementById('ansBtn').disabled = true;
+            document.getElementById('downloadBtn').disabled = true; 
+            document.getElementById('playBtn').disabled = true; 
+        }
+
+        function drawSingleCell(r, c, val) {
+            if(!mazeMatrix[r]) mazeMatrix[r] = [];
+            mazeMatrix[r][c] = val;
+            
+            if (val === 1) ctx.fillStyle = "#3a3d52";
+            else if (val === 2) ctx.fillStyle = "#00a8ff";
+            else if (val === 3) ctx.fillStyle = "#ff4757";
+            else if (val === 4) ctx.fillStyle = "#ffdd59";
+            else ctx.fillStyle = "#0e0e12";
+            
+            ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+        }
+
+        function setGameStatus(status, text) {
+            const lbl = document.getElementById('statusLabel');
+            if (status === "generating") {
+                isGenerating = true;
+                lbl.innerText = "⏳ 迷宮動態生成中，請稍候...";
+            } else {
+                isGenerating = false;
+                lbl.innerText = "";
+                drawMaze();
+            }
+        }
+
+        function toggleButtonsAfterGen(pyList) {
+            solutionPath = pyList.toJs();
+            document.getElementById('ansBtn').disabled = false;
+            document.getElementById('downloadBtn').disabled = false; 
+            document.getElementById('playBtn').disabled = false; 
+        }
+
+        async function play_answer_animation() {
+            if (solutionPath.length === 0 || isGenerating || isShowingAnswer) return;
+            isShowingAnswer = true;
+            
+            document.getElementById('ansBtn').disabled = true;
+            document.getElementById('genBtn').disabled = true;
+            document.getElementById('downloadBtn').disabled = true;
+            document.getElementById('playBtn').disabled = true;
+
+            let userAnsSpeed = 50;
+            try {
+                userAnsSpeed = parseInt(document.getElementById('ansSpeedInput').value);
+            } catch(e) { userAnsSpeed = 50; }
+            if (userAnsSpeed < 1) userAnsSpeed = 1;
+            if (userAnsSpeed > 100) userAnsSpeed = 100;
+            
+            let ansDelay = Math.max(1, Math.floor((101 - userAnsSpeed) * 0.6));
+
+            for (let i = 0; i < solutionPath.length; i++) {
+                if (isPlayingMode) break; 
+                let pt = solutionPath[i];
+                let r = pt[0];
+                let c = pt[1];
+                
+                if (mazeMatrix[r][c] === 0) {
+                    mazeMatrix[r][c] = 4;
+                    drawSingleCell(r, c, 4);
+                    await new Promise(resolve => setTimeout(resolve, ansDelay));
+                }
+            }
+            
+            isShowingAnswer = false;
+            document.getElementById('genBtn').disabled = false;
+            document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('playBtn').disabled = false;
+            drawMaze();
+        }
+
+        function downloadMazeImage() {
+            if (mazeMatrix.length === 0) return;
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `maze_play_${mazeSize}x${mazeSize}.png`;
+            link.click();
+        }
+
+        window.onload = function() {
+            initGame();
+            document.getElementById('ansBtn').addEventListener('click', () => {
+                play_answer_animation();
+            });
+            document.getElementById('downloadBtn').addEventListener('click', () => {
+                downloadMazeImage();
+            });
+        };
     </script>
+
+    <script type="py">
+        import random
+        import sys
+        import asyncio
+        from pyscript import document
+        from js import setupCanvas, drawSingleCell, setGameStatus, toggleButtonsAfterGen
+        from pyodide.ffi import create_proxy
+
+        sys.setrecursionlimit(100000)
+
+        def solve_maze(maze, size):
+            start = (1, 1)
+            end = (size - 2, size - 2)
+            queue = [start]
+            parent = {start: None}
+            
+            while queue:
+                curr = queue.pop(0)
+                if curr == end:
+                    break
+                cx, cy = curr
+                for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+                    nx, ny = cx + dx, cy + dy
+                    if 0 <= nx < size and 0 <= ny < size:
+                        if maze[ny][nx] != 1 and (nx, ny) not in parent:
+                            parent[(nx, ny)] = curr
+                            queue.append((nx, ny))
+            
+            path = []
+            curr = end
+            while curr is not None:
+                path.append([curr[1], curr[0]])
+                curr = parent.get(curr)
+            path.reverse()
+            return path
+
+        async def generate_maze_animated(event):
+            btn = document.querySelector("#genBtn")
+            btn.disabled = True
+            
+            try:
+                size = int(document.querySelector("#sizeInput").value)
+            except:
+                size = 21
+                
+            if size % 2 == 0:
+                size += 1
+                document.querySelector("#sizeInput").value = str(size)
+                
+            if size < 5: size = 5
+            if size > 1001: size = 1001  
+            document.querySelector("#sizeInput").value = str(size)
+            
+            try:
+                speed_val = int(document.querySelector("#speedInput").value)
+            except:
+                speed_val = 50
+            if speed_val < 1: speed_val = 1
+            if speed_val > 101: speed_val = 101
+            document.querySelector("#speedInput").value = str(speed_val)
+
+            setupCanvas(size)
+            setGameStatus("generating", "")
+
+            maze = [[1] * size for _ in range(size)]
+            for r in range(size):
+                for c in range(size):
+                    drawSingleCell(r, c, 1)
+
+            visited = set()
+            end_x, end_y = size - 2, size - 2
+
+            stack = [(1, 1)]
+            visited.add((1, 1))
+            maze[1][1] = 0
+            drawSingleCell(1, 1, 0)
+
+            base_delay = (101 - speed_val) * 0.001
+            if size > 45:
+                base_delay = base_delay * 0.1 
+
+            while stack:
+                cx, cy = stack[-1]
+                
+                if cx == end_x and cy == end_y:
+                    stack.pop()
+                    continue
+
+                directions = [(0, -2), (0, 2), (-2, 0), (2, 0)]
+                random.shuffle(directions)
+                
+                carved = False
+                for dx, dy in directions:
+                    nx, ny = cx + dx, cy + dy
+                    if 0 < nx < size and 0 < ny < size and (nx, ny) not in visited:
+                        
+                        if nx == end_x and ny == end_y:
+                            if end_x - 2 > 0: visited.add((end_x - 2, end_y))
+                            if end_y - 2 > 0: visited.add((end_x, end_y - 2))
+
+                        maze[cy + dy//2][cx + dx//2] = 0
+                        drawSingleCell(cy + dy//2, cx + dx//2, 0)
+                        
+                        maze[ny][nx] = 0
+                        drawSingleCell(ny, nx, 0)
+                        
+                        visited.add((nx, ny))
+                        stack.append((nx, ny))
+                        carved = True
+                        
+                        if base_delay > 0:
+                            await asyncio.sleep(base_delay)
+                        break
+                        
+                if not carved:
+                    stack.pop()
+
+            maze[1][1] = 2       
+            maze[end_y][end_x] = 3 
+            drawSingleCell(1, 1, 2)
+            drawSingleCell(end_y, end_x, 3)
+
+            path_solution = solve_maze(maze, size)
+            toggleButtonsAfterGen(path_solution)
+
+            setGameStatus("ready", "")
+            btn.disabled = False
+
+        def on_click_handler(event):
+            asyncio.ensure_future(generate_maze_animated(event))
+
+        click_proxy = create_proxy(on_click_handler)
+        document.querySelector("#genBtn").addEventListener("click", click_proxy)
+        
+        asyncio.ensure_future(generate_maze_animated(None))
+    </script>
+
 </body>
 </html>
