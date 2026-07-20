@@ -42,12 +42,16 @@
             display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; 
             box-shadow: 0 8px 25px rgba(0,0,0,0.5); border: 1px solid #4a4a5a;
             position: absolute; top: 75px; transition: 0.3s ease-in-out; opacity: 1; z-index: 100;
+            width: 320px;
         }
         #control-panel.hidden { display: none !important; opacity: 0; pointer-events: none; }
         
         .setting-row { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
         .setting-row label { font-size: 14px; font-weight: bold; color: #ccc; }
-        input[type="number"] { width: 80px; padding: 6px; border-radius: 4px; border: 1px solid #555; background: #2b2b36; color: white; font-weight: bold; text-align: center; font-size: 14px; }
+        .coord-inputs { display: flex; gap: 4px; }
+        .coord-inputs span { color: #888; font-size: 14px; align-self: center; }
+        
+        input[type="number"] { width: 75px; padding: 6px; border-radius: 4px; border: 1px solid #555; background: #2b2b36; color: white; font-weight: bold; text-align: center; font-size: 14px; }
         
         .panel-divider { width: 100%; border-top: 1px solid #3a3a4a; margin: 5px 0; }
         .panel-buttons { display: flex; gap: 10px; width: 100%; justify-content: center; }
@@ -89,8 +93,25 @@
             <input type="number" id="ansSpeedInput" value="50" min="1" max="100">
         </div>
 
-        <div class="panel-divider"></div>
+        <div class="setting-row">
+            <label>自訂起點 (X, Y 填奇數):</label>
+            <div class="coord-inputs">
+                <input type="number" id="startXInput" value="1" min="1">
+                <span>,</span>
+                <input type="number" id="startYInput" value="1" min="1">
+            </div>
+        </div>
 
+        <div class="setting-row">
+            <label>自訂終點 (X, Y 填奇數):</label>
+            <div class="coord-inputs">
+                <input type="number" id="endXInput" value="19" min="1">
+                <span>,</span>
+                <input type="number" id="endYInput" value="19" min="1">
+            </div>
+        </div>
+
+        <div class="panel-divider"></div>
         <div class="panel-buttons">
             <button id="genBtn">重新生成迷宮</button>
             <button id="ansBtn" disabled>顯示答案</button>
@@ -116,8 +137,9 @@
         let isPlayingMode = false;
         let playerX = 1;
         let playerY = 1;
+        let startX = 1;
+        let startY = 1;
         let playerPathHistory = []; // 儲存玩家踩過的藍色方塊座標資訊
-
         let isGenerating = false; 
         let isShowingAnswer = false; 
         let solutionPath = []; 
@@ -125,6 +147,14 @@
         function initGame() {
             canvas = document.getElementById('mazeCanvas');
             ctx = canvas.getContext('2d');
+
+            // 監聽迷宮尺寸改變，自動更新預設的終點輸入數值 (最大奇數)
+            document.getElementById('sizeInput').addEventListener('input', (e) => {
+                let sz = parseInt(e.target.value) || 21;
+                if (sz % 2 === 0) sz += 1;
+                document.getElementById('endXInput').value = sz - 2;
+                document.getElementById('endYInput').value = sz - 2;
+            });
 
             // 鍵盤移動監聽
             document.addEventListener('keydown', (e) => {
@@ -171,16 +201,16 @@
                 panel.classList.add('hidden');
                 settingsToggleBtn.disabled = true;
 
-                // 初始化玩家位置與歷史紀錄
-                playerX = 1;
-                playerY = 1;
+                // 初始化玩家位置回自訂起點與歷史紀錄
+                playerX = startX;
+                playerY = startY;
                 playerPathHistory = [];
                 // 起點自動算第一步踩過的位置
-                playerPathHistory.push({r: 1, c: 1});
+                playerPathHistory.push({r: playerY, c: playerX});
 
                 drawMaze();
             } else {
-                // 離開遊玩模式 (再按一次刪除橘色方塊和藍色方塊，並把設定顯示)
+                // 離開遊玩模式
                 isPlayingMode = false;
                 playBtn.innerText = "🎮 開始遊玩";
                 playBtn.classList.remove('playing-mode');
@@ -189,9 +219,9 @@
                 panel.classList.remove('hidden');
                 settingsToggleBtn.disabled = false;
 
-                // 【修正核心】重設玩家位置回起點原位，讓綠色方塊正確回歸原點
-                playerX = 1;
-                playerY = 1;
+                // 重設玩家位置回自訂起點原位
+                playerX = startX;
+                playerY = startY;
 
                 // 清空遊玩歷史
                 playerPathHistory = [];
@@ -264,7 +294,7 @@
                 ctx.fillRect(playerX * cellSize, playerY * cellSize, cellSize, cellSize);
                 ctx.shadowBlur = 0;
             } else {
-                // 非遊玩模式，繪製原本的綠色展示點（此時玩家座標已被回歸至 1, 1）
+                // 非遊玩模式，繪製自訂起點的綠色展示點
                 if (!isGenerating) {
                     ctx.fillStyle = "#00ff88";
                     ctx.shadowColor = "#00ff88";
@@ -275,8 +305,11 @@
             }
         }
 
-        function setupCanvas(size) {
+        function setupCanvas(size, sX, sY) {
             mazeSize = size;
+            startX = sX;
+            startY = sY;
+
             let maxCanvasSize = 650; 
             cellSize = Math.floor(maxCanvasSize / size);
             if (cellSize < 3) cellSize = 3; 
@@ -284,8 +317,8 @@
             canvas.width = mazeSize * cellSize;
             canvas.height = mazeSize * cellSize;
             
-            playerX = 1;
-            playerY = 1;
+            playerX = startX;
+            playerY = startY;
             playerPathHistory = [];
             isPlayingMode = false;
 
@@ -400,9 +433,9 @@
 
         sys.setrecursionlimit(100000)
 
-        def solve_maze(maze, size):
-            start = (1, 1)
-            end = (size - 2, size - 2)
+        def solve_maze(maze, size, s_x, s_y, e_x, e_y):
+            start = (s_x, s_y)
+            end = (e_x, e_y)
             queue = [start]
             parent = {start: None}
             
@@ -420,6 +453,9 @@
             
             path = []
             curr = end
+            if curr not in parent and start != end:
+                return [] # 沒找到路徑
+                
             while curr is not None:
                 path.append([curr[1], curr[0]])
                 curr = parent.get(curr)
@@ -430,18 +466,41 @@
             btn = document.querySelector("#genBtn")
             btn.disabled = True
             
+            # 1. 讀取迷宮尺寸
             try:
                 size = int(document.querySelector("#sizeInput").value)
             except:
                 size = 21
-                
-            if size % 2 == 0:
-                size += 1
-                document.querySelector("#sizeInput").value = str(size)
-                
+            if size % 2 == 0: size += 1
             if size < 5: size = 5
-            if size > 1001: size = 1001  
+            if size > 1001: size = 1001
             document.querySelector("#sizeInput").value = str(size)
+
+            # 2. 讀取並防呆修正自訂起點
+            try:
+                s_x = int(document.querySelector("#startXInput").value)
+                s_y = int(document.querySelector("#startYInput").value)
+            except:
+                s_x, s_y = 1, 1
+            if s_x % 2 == 0: s_x = max(1, s_x - 1)
+            if s_y % 2 == 0: s_y = max(1, s_y - 1)
+            if s_x >= size: s_x = size - 2
+            if s_y >= size: s_y = size - 2
+            document.querySelector("#startXInput").value = str(s_x)
+            document.querySelector("#startYInput").value = str(s_y)
+
+            # 3. 讀取並防呆修正自訂終點
+            try:
+                e_x = int(document.querySelector("#endXInput").value)
+                e_y = int(document.querySelector("#endYInput").value)
+            except:
+                e_x, e_y = size - 2, size - 2
+            if e_x % 2 == 0: e_x = max(1, e_x - 1)
+            if e_y % 2 == 0: e_y = max(1, e_y - 1)
+            if e_x >= size: e_x = size - 2
+            if e_y >= size: e_y = size - 2
+            document.querySelector("#endXInput").value = str(e_x)
+            document.querySelector("#endYInput").value = str(e_y)
             
             try:
                 speed_val = int(document.querySelector("#speedInput").value)
@@ -451,7 +510,7 @@
             if speed_val > 101: speed_val = 101
             document.querySelector("#speedInput").value = str(speed_val)
 
-            setupCanvas(size)
+            setupCanvas(size, s_x, s_y)
             setGameStatus("generating", "")
 
             maze = [[1] * size for _ in range(size)]
@@ -460,12 +519,10 @@
                     drawSingleCell(r, c, 1)
 
             visited = set()
-            end_x, end_y = size - 2, size - 2
-
-            stack = [(1, 1)]
-            visited.add((1, 1))
-            maze[1][1] = 0
-            drawSingleCell(1, 1, 0)
+            stack = [(s_x, s_y)]
+            visited.add((s_x, s_y))
+            maze[s_y][s_x] = 0
+            drawSingleCell(s_y, s_x, 0)
 
             base_delay = (101 - speed_val) * 0.001
             if size > 45:
@@ -474,7 +531,7 @@
             while stack:
                 cx, cy = stack[-1]
                 
-                if cx == end_x and cy == end_y:
+                if cx == e_x and cy == e_y:
                     stack.pop()
                     continue
 
@@ -486,9 +543,9 @@
                     nx, ny = cx + dx, cy + dy
                     if 0 < nx < size and 0 < ny < size and (nx, ny) not in visited:
                         
-                        if nx == end_x and ny == end_y:
-                            if end_x - 2 > 0: visited.add((end_x - 2, end_y))
-                            if end_y - 2 > 0: visited.add((end_x, end_y - 2))
+                        if nx == e_x and ny == e_y:
+                            if e_x - 2 > 0: visited.add((e_x - 2, e_y))
+                            if e_y - 2 > 0: visited.add((e_x, e_y - 2))
 
                         maze[cy + dy//2][cx + dx//2] = 0
                         drawSingleCell(cy + dy//2, cx + dx//2, 0)
@@ -507,12 +564,13 @@
                 if not carved:
                     stack.pop()
 
-            maze[1][1] = 2       
-            maze[end_y][end_x] = 3 
-            drawSingleCell(1, 1, 2)
-            drawSingleCell(end_y, end_x, 3)
+            # 設定起點(藍)與終點(紅)的圖塊狀態
+            maze[s_y][s_x] = 2       
+            maze[e_y][e_x] = 3 
+            drawSingleCell(s_y, s_x, 2)
+            drawSingleCell(e_y, e_x, 3)
 
-            path_solution = solve_maze(maze, size)
+            path_solution = solve_maze(maze, size, s_x, s_y, e_x, e_y)
             toggleButtonsAfterGen(path_solution)
 
             setGameStatus("ready", "")
@@ -526,6 +584,5 @@
         
         asyncio.ensure_future(generate_maze_animated(None))
     </script>
-
 </body>
 </html>
