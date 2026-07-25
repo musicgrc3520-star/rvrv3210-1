@@ -12,7 +12,7 @@
         button { font-weight: bold; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
         button:disabled { background: #555 !important; color: #888 !important; cursor: not-allowed; }
         #settingsToggleBtn { background: #6c757d; color: #fff; }
-        #playBtn { background: #ff9f43; color: #111; }
+        #playBtn { background: #00ff88; color: #111; }
         #playBtn.playing-mode { background: #ee5253; color: #fff; }
         #downloadBtn { background: #00a8ff; color: #fff; }
         #genBtn { background: #00ff88; color: #111; }
@@ -26,7 +26,7 @@
         #maze-wrapper { background: #0e0e12; padding: 10px; border-radius: 8px; border: 2px solid #3a3a4a; }
         canvas { display: block; background: #000; }
         #hud { margin-top: 15px; background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 6px; color: #00ff88; font-family: monospace; font-size: 16px; border: 1px solid #00ff88; text-align: center; }
-        .status-text { font-size: 12px; color: #ffbc00; margin-bottom: 2px; }
+        .status-text { font-size: 13px; color: #ffbc00; margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -39,13 +39,13 @@
 
     <div id="control-panel">
         <div class="row"><label>迷宮尺寸 X & Y(5~251):</label><div class="inputs"><input type="number" id="widthInput" value="21" step="2" min="5" max="251"><span>x</span><input type="number" id="heightInput" value="21" step="2" min="5" max="251"></div></div>
-        <div class="row"><label>生成/解答速度(1~101):</label><div class="inputs"><input type="number" id="speedInput" value="80" min="1" max="101"><span>/</span><input type="number" id="ansSpeedInput" value="50" min="1" max="101"></div></div>
+        <div class="row"><label>生成/解答速度(1~101):</label><div class="inputs"><input type="number" id="speedInput" value="101" min="1" max="101"><span>/</span><input type="number" id="ansSpeedInput" value="50" min="1" max="101"></div></div>
         
         <div class="row">
             <label>起點 (X, Y):</label>
             <div class="inputs">
                 <select id="startPresetSelect">
-                    <option value="custom">自訂</option><option value="top-left" selected>左上</option><option value="top-right">右上</option><option value="bottom-left">左下</option><option value="bottom-right">右下</option><option value="center">中間</option><option value="left-center">左中</option><option value="right-center">右中</option><option value="top-center">上中</option><option value="bottom-center">下中</option>
+                    <option value="custom">自訂</option><option value="top-left" selected>左上</option><option value="top-right">右上</option><option value="bottom-left">左下</option><option value="bottom-right">右下</option><option value="center">中間</option>
                 </select>
                 <input type="number" id="startXInput" value="1"><span>,</span><input type="number" id="startYInput" value="1">
             </div>
@@ -55,7 +55,7 @@
             <label>終點 (X, Y):</label>
             <div class="inputs">
                 <select id="endPresetSelect">
-                    <option value="custom">自訂</option><option value="top-left">左上</option><option value="top-right">右上</option><option value="bottom-left">左下</option><option value="bottom-right" selected>右下</option><option value="center">中間</option><option value="left-center">左中</option><option value="right-center">右中</option><option value="top-center">上中</option><option value="bottom-center">下中</option>
+                    <option value="custom">自訂</option><option value="top-left">左上</option><option value="top-right">右上</option><option value="bottom-left">左下</option><option value="bottom-right" selected>右下</option><option value="center">中間</option>
                 </select>
                 <input type="number" id="endXInput" value="19"><span>,</span><input type="number" id="endYInput" value="19">
             </div>
@@ -68,203 +68,256 @@
     </div>
 
     <div id="maze-wrapper"><canvas id="mazeCanvas"></canvas></div>
-    <div id="hud"><div id="statusLabel" class="status-text"></div>歡迎來到rvrv3210網</div>
+    <div id="hud">
+        <div id="statusLabel" class="status-text">準備就緒</div>
+        歡迎來到 rvrv3210 網
+    </div>
 
     <script>
-        let canvas, ctx, mazeMatrix = [], mazeW = 21, mazeH = 21, cellSize = 20;
-        let isPlayingMode = false, playerX = 1, playerY = 1, startX = 1, startY = 1;
-        let playerPathHistory = [], isGenerating = false, isShowingAnswer = false, solutionPath = [];
-        
-        // 鍵盤持續按下控制變數
-        const activeKeys = new Set();
-        let moveLoopInterval = null;
-        let lastMoveTime = 0;
+let mazeMatrix = [];
+let mazeW = 21, mazeH = 21;
+let startX = 1, startY = 1, endX = 19, endY = 19;
+let playerX = 1, playerY = 1;
+let isPlayingMode = false;
+let isGenerating = false;
+let isShowingAnswer = false;
+let playerPathHistory = [];
+let activeKeys = new Set();
 
-        // 顏色定義：0=通道, 1=牆壁, 2=起點(改為綠色), 3=終點, 4=解答, 5=動態生成頭部
-        const COLORS = { 0: "#0e0e12", 1: "#3a3d52", 2: "#00ff88", 3: "#ff4757", 4: "#ffdd59", 5: "#ff7f50" };
+let moveDelay = 200;
+let moveInterval = 90;
+let keyPressTime = 0;
+let isFirstMove = true;
 
-        function getPresetCoordinates(p, w, h) {
-            let mx = w - (w % 2 === 0 ? 1 : 2), my = h - (h % 2 === 0 ? 1 : 2);
-            let cx = Math.floor(w / 2) - (Math.floor(w / 2) % 2 === 0 ? 1 : 0);
-            let cy = Math.floor(h / 2) - (Math.floor(h / 2) % 2 === 0 ? 1 : 0);
-            const map = { 'top-left': [1,1], 'top-right': [mx,1], 'bottom-left': [1,my], 'bottom-right': [mx,my], 'center': [cx,cy], 'left-center': [1,cy], 'right-center': [mx,cy], 'top-center': [cx,1], 'bottom-center': [cx,my] };
-            return map[p] ? { x: map[p][0], y: map[p][1] } : null;
-        }
+let canvas, ctx;
 
-        function applyPreset(type) {
-            const w = +document.getElementById('widthInput').value || 21, h = +document.getElementById('heightInput').value || 21;
-            const sel = document.getElementById(type + 'PresetSelect');
-            const coords = getPresetCoordinates(sel.value, w, h);
-            if (coords) {
-                document.getElementById(type + 'XInput').value = coords.x;
-                document.getElementById(type + 'YInput').value = coords.y;
-            }
-        }
+const COLOR_WALL = '#393c51';
+const COLOR_PATH = '#000000';
+const COLOR_START = '#10B981';
+const COLOR_END = '#EF4444';
+const COLOR_ANS = '#EEFF00';
 
-        function initGame() {
-            canvas = document.getElementById('mazeCanvas'); ctx = canvas.getContext('2d');
-            ['widthInput', 'heightInput'].forEach(id => document.getElementById(id).addEventListener('input', () => { applyPreset('start'); applyPreset('end'); }));
-            ['start', 'end'].forEach(t => document.getElementById(t + 'PresetSelect').addEventListener('change', () => applyPreset(t)));
+function initGame() {
+    canvas = document.getElementById('mazeCanvas');
+    ctx = canvas.getContext('2d');
 
-            // 監聽鍵盤按下與釋放，實現按住連續移動
-            window.addEventListener('keydown', (e) => {
-                if (!isPlayingMode || !mazeMatrix.length || isGenerating || isShowingAnswer) return;
-                if (['KeyW', 'ArrowUp', 'KeyS', 'ArrowDown', 'KeyA', 'ArrowLeft', 'KeyD', 'ArrowRight'].includes(e.code)) {
-                    e.preventDefault();
-                    if (!activeKeys.has(e.code)) {
-                        activeKeys.add(e.code);
-                        processContinuousMove();
-                    }
-                }
-            });
+    ['widthInput', 'heightInput'].forEach(id => {
+        let el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => { applyPreset('start'); applyPreset('end'); });
+    });
 
-            window.addEventListener('keyup', (e) => {
-                activeKeys.delete(e.code);
-            });
+    ['start', 'end'].forEach(t => {
+        let el = document.getElementById(t + 'PresetSelect');
+        if (el) el.addEventListener('change', () => applyPreset(t));
+    });
 
-            document.getElementById('settingsToggleBtn').onclick = () => !isPlayingMode && document.getElementById('control-panel').classList.toggle('hidden');
-            document.getElementById('playBtn').onclick = togglePlayMode;
-            document.getElementById('ansBtn').onclick = play_answer_animation;
-            document.getElementById('downloadBtn').onclick = () => {
-                const a = document.createElement('a'); a.href = canvas.toDataURL(); a.download = `maze_${mazeW}x${mazeH}.png`; a.click();
-            };
-            applyPreset('start'); applyPreset('end');
-            
-            // 啟動連續移動循環檢測
-            requestAnimationFrame(gameLoop);
-        }
-
-        function gameLoop(timestamp) {
-            if (isPlayingMode && activeKeys.size > 0 && timestamp - lastMoveTime > 60) { // 每 60ms 移動一格 (可調整平滑度)
+    window.addEventListener('keydown', (e) => {
+        if (!isPlayingMode || !mazeMatrix.length || isGenerating || isShowingAnswer) return;
+        if (['KeyW', 'ArrowUp', 'KeyS', 'ArrowDown', 'KeyA', 'ArrowLeft', 'KeyD', 'ArrowRight'].includes(e.code)) {
+            e.preventDefault();
+            if (!activeKeys.has(e.code)) {
+                activeKeys.clear();
+                activeKeys.add(e.code);
+                isFirstMove = true;
+                keyPressTime = performance.now();
                 processContinuousMove();
-                lastMoveTime = timestamp;
-            }
-            requestAnimationFrame(gameLoop);
-        }
-
-        function processContinuousMove() {
-            let dx = 0, dy = 0;
-            if (activeKeys.has('KeyW') || activeKeys.has('ArrowUp')) dy = -1;
-            else if (activeKeys.has('KeyS') || activeKeys.has('ArrowDown')) dy = 1;
-            else if (activeKeys.has('KeyA') || activeKeys.has('ArrowLeft')) dx = -1;
-            else if (activeKeys.has('KeyD') || activeKeys.has('ArrowRight')) dx = 1;
-
-            if (dx !== 0 || dy !== 0) {
-                movePlayer(dx, dy);
             }
         }
+    });
 
-        function togglePlayMode() {
-            isPlayingMode = !isPlayingMode;
+    window.addEventListener('keyup', (e) => { activeKeys.delete(e.code); });
+
+    const settingsBtn = document.getElementById('settingsToggleBtn');
+    if (settingsBtn) {
+        settingsBtn.onclick = () => {
+            if (!isPlayingMode) document.getElementById('control-panel').classList.toggle('hidden');
+        };
+    }
+
+    document.getElementById('playBtn').onclick = togglePlayMode;
+    document.getElementById('downloadBtn').onclick = () => {
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL();
+        a.download = `maze_${mazeW}x${mazeH}.png`;
+        a.click();
+    };
+
+    applyPreset('start');
+    applyPreset('end');
+    requestAnimationFrame(gameLoop);
+}
+
+function gameLoop(timestamp) {
+    if (isPlayingMode && activeKeys.size > 0) {
+        let elapsed = timestamp - keyPressTime;
+        if (isFirstMove && elapsed > moveDelay) {
+            isFirstMove = false;
+            keyPressTime = timestamp;
+            processContinuousMove();
+        } else if (!isFirstMove && elapsed > moveInterval) {
+            keyPressTime = timestamp;
+            processContinuousMove();
+        }
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+function processContinuousMove() {
+    if (activeKeys.has('KeyW') || activeKeys.has('ArrowUp')) movePlayer(0, -1);
+    else if (activeKeys.has('KeyS') || activeKeys.has('ArrowDown')) movePlayer(0, 1);
+    else if (activeKeys.has('KeyA') || activeKeys.has('ArrowLeft')) movePlayer(-1, 0);
+    else if (activeKeys.has('KeyD') || activeKeys.has('ArrowRight')) movePlayer(1, 0);
+}
+
+function movePlayer(dx, dy) {
+    let nx = playerX + dx, ny = playerY + dy;
+    if (mazeMatrix[ny] && mazeMatrix[ny][nx] !== 1) {
+        playerX = nx; playerY = ny;
+        if (!playerPathHistory.some(p => p.r === ny && p.c === nx)) {
+            playerPathHistory.push({ r: ny, c: nx });
+        }
+        drawMaze();
+        if (mazeMatrix[playerY][playerX] === 3) {
             activeKeys.clear();
-            const btn = document.getElementById('playBtn');
-            btn.innerText = isPlayingMode ? "❌ 結束遊玩" : "🎮 開始遊玩";
-            btn.classList.toggle('playing-mode', isPlayingMode);
-            document.getElementById('control-panel').classList.toggle('hidden', isPlayingMode);
-            document.getElementById('settingsToggleBtn').disabled = isPlayingMode;
-            playerX = startX; playerY = startY;
-            playerPathHistory = isPlayingMode ? [{r: startY, c: startX}] : [];
-            drawMaze();
+            setTimeout(() => alert("🎉 恭喜抵達終點！"), 50);
         }
+    }
+}
 
-        function movePlayer(dx, dy) {
-            let nx = playerX + dx, ny = playerY + dy;
-            if (mazeMatrix[ny] && mazeMatrix[ny][nx] !== 1) {
-                playerX = nx; playerY = ny;
-                if (!playerPathHistory.some(p => p.r === ny && p.c === nx)) playerPathHistory.push({r: ny, c: nx});
-                drawMaze();
-                if (mazeMatrix[playerY][playerX] === 3) {
-                    activeKeys.clear();
-                    setTimeout(() => alert("🎉 恭喜抵達終點！"), 50);
-                }
+function applyPreset(type) {
+    try {
+        let w = intVal('#widthInput'), h = intVal('#heightInput');
+        w = maxVal(5, odd(w)); h = maxVal(5, odd(h));
+        let sel = document.getElementById(type + 'PresetSelect').value;
+        let xEl = document.getElementById(type + 'XInput');
+        let yEl = document.getElementById(type + 'YInput');
+        
+        if (sel === 'top-left') { xEl.value = 1; yEl.value = 1; }
+        else if (sel === 'top-right') { xEl.value = w - 2; yEl.value = 1; }
+        else if (sel === 'bottom-left') { xEl.value = 1; yEl.value = h - 2; }
+        else if (sel === 'bottom-right') { xEl.value = w - 2; yEl.value = h - 2; }
+        else if (sel === 'center') { xEl.value = odd(Math.floor(w / 2)); yEl.value = odd(Math.floor(h / 2)); }
+    } catch(e) {}
+}
+
+function setupCanvas(w, h, sx, sy, ex, ey) {
+    mazeW = w; mazeH = h;
+    startX = sx; startY = sy;
+    endX = ex; endY = ey;
+    playerX = sx; playerY = sy;
+    playerPathHistory = [{ r: sy, c: sx }];
+    mazeMatrix = Array.from({ length: h }, () => Array(w).fill(1));
+
+    let maxDim = Math.max(w, h);
+    let cellSize = Math.max(2, Math.floor(600 / maxDim));
+    canvas.width = w * cellSize;
+    canvas.height = h * cellSize;
+    ctx.fillStyle = COLOR_WALL;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawSingleCell(r, c, val) {
+    if (!mazeMatrix[r]) mazeMatrix[r] = [];
+    mazeMatrix[r][c] = val;
+    let cw = canvas.width / mazeW;
+    let ch = canvas.height / mazeH;
+
+    if (val === 1) ctx.fillStyle = COLOR_WALL;
+    else if (val === 0) ctx.fillStyle = COLOR_PATH;
+    else if (val === 2) ctx.fillStyle = COLOR_START;
+    else if (val === 3) ctx.fillStyle = COLOR_END;
+    else if (val === 5) ctx.fillStyle = '#F59E0B';
+    else if (val === 9) ctx.fillStyle = COLOR_ANS;
+
+    ctx.fillRect(c * cw, r * ch, cw, ch);
+}
+
+function drawMaze() {
+    let cw = canvas.width / mazeW;
+    let ch = canvas.height / mazeH;
+
+    for (let r = 0; r < mazeH; r++) {
+        for (let c = 0; c < mazeW; c++) {
+            let val = mazeMatrix[r][c];
+            if (val === 1) ctx.fillStyle = COLOR_WALL;
+            else if (val === 0) ctx.fillStyle = COLOR_PATH;
+            else if (val === 2) ctx.fillStyle = COLOR_START;
+            else if (val === 3) ctx.fillStyle = COLOR_END;
+            else if (val === 9) ctx.fillStyle = COLOR_ANS;
+            ctx.fillRect(c * cw, r * ch, cw, ch);
+        }
+    }
+
+    if (isPlayingMode && playerPathHistory.length > 0) {
+        ctx.fillStyle = '#06B6D4';
+        playerPathHistory.forEach(p => {
+            if (!(p.r === startY && p.c === startX) && !(p.r === endY && p.c === endX)) {
+                ctx.fillRect(p.c * cw, p.r * ch, cw, ch);
             }
-        }
+        });
+        ctx.fillStyle = '#3B82F6';
+        ctx.fillRect(playerX * cw, playerY * ch, cw, ch);
+    }
+}
 
-        function drawMaze() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let r = 0; r < mazeH; r++) {
-                for (let c = 0; c < mazeW; c++) {
-                    let val = (mazeMatrix[r] && mazeMatrix[r][c] !== undefined) ? mazeMatrix[r][c] : 1;
-                    ctx.fillStyle = COLORS[val] || COLORS[0];
-                    ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-                }
-            }
-            if (isPlayingMode) {
-                ctx.fillStyle = "#22a6fe";
-                playerPathHistory.forEach(p => mazeMatrix[p.r] && mazeMatrix[p.r][p.c] !== 3 && ctx.fillRect(p.c * cellSize, p.r * cellSize, cellSize, cellSize));
-                ctx.fillStyle = "#ff7f50";
-                ctx.fillRect(playerX * cellSize, playerY * cellSize, cellSize, cellSize);
-            } else if (!isGenerating) {
-                ctx.fillStyle = COLORS[2]; // 起點綠色
-                ctx.fillRect(startX * cellSize, startY * cellSize, cellSize, cellSize);
-            }
-        }
+function setGameStatus(status, text) {
+    let statusLabel = document.getElementById('statusLabel');
+    if (status === 'generating') {
+        isGenerating = true;
+        if (statusLabel) statusLabel.innerText = "地圖生成中...";
+    } else {
+        isGenerating = false;
+        if (statusLabel) statusLabel.innerText = `正解解法占比：${text}`;
+    }
+}
 
-        function setupCanvas(w, h, sX, sY) {
-            mazeW = w; mazeH = h; startX = sX; startY = sY;
-            cellSize = Math.max(2, Math.min(Math.floor(650 / w), Math.floor(650 / h)));
-            canvas.width = w * cellSize; canvas.height = h * cellSize;
-            
-            mazeMatrix = Array.from({ length: h }, () => Array(w).fill(1));
-            ctx.fillStyle = COLORS[1];
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+function enableUIButtons() {
+    let ansBtn = document.getElementById('ansBtn');
+    let playBtn = document.getElementById('playBtn');
+    let downloadBtn = document.getElementById('downloadBtn');
 
-            playerX = sX; playerY = sY; playerPathHistory = []; isPlayingMode = false;
-            document.getElementById('playBtn').innerText = "🎮 開始遊玩";
-            document.getElementById('playBtn').classList.remove('playing-mode');
-            ['ansBtn', 'downloadBtn', 'playBtn'].forEach(id => document.getElementById(id).disabled = true);
-        }
+    if (ansBtn) ansBtn.disabled = false;
+    if (playBtn) playBtn.disabled = false;
+    if (downloadBtn) downloadBtn.disabled = false;
+}
 
-        function drawSingleCell(r, c, val) {
-            if (r >= 0 && r < mazeH && c >= 0 && c < mazeW) {
-                mazeMatrix[r][c] = val;
-                ctx.fillStyle = COLORS[val] || COLORS[0];
-                ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-            }
-        }
+function togglePlayMode() {
+    isPlayingMode = !isPlayingMode;
+    let btn = document.getElementById('playBtn');
+    activeKeys.clear();
 
-        function setGameStatus(s, txt) {
-            isGenerating = (s === "generating");
-            document.getElementById('statusLabel').innerText = isGenerating ? "⏳ 迷宮動態生成中..." : (txt ? `正解路徑占比：${txt}` : "");
-            if (!isGenerating) drawMaze();
-        }
+    if (isPlayingMode) {
+        btn.innerText = "❌ 結束遊玩";
+        btn.classList.add('playing-mode');
+        playerX = startX; playerY = startY;
+        playerPathHistory = [{ r: startY, c: startX }];
+    } else {
+        btn.innerText = "🎮 開始遊玩";
+        btn.classList.remove('playing-mode');
+    }
+    drawMaze();
+}
 
-        function toggleButtonsAfterGen(pyList) {
-            solutionPath = pyList.toJs();
-            ['ansBtn', 'downloadBtn', 'playBtn'].forEach(id => document.getElementById(id).disabled = false);
-        }
+function intVal(sel) { let el = document.querySelector(sel); return el ? parseInt(el.value) || 0 : 0; }
+function maxVal(min, val) { return Math.max(min, val); }
+function odd(v) { return v % 2 === 0 ? v - 1 : v; }
 
-        async function play_answer_animation() {
-            if (!solutionPath.length || isGenerating || isShowingAnswer) return;
-            isShowingAnswer = true;
-            ['ansBtn', 'genBtn', 'downloadBtn', 'playBtn'].forEach(id => document.getElementById(id).disabled = true);
-            let speed = Math.max(1, +document.getElementById('ansSpeedInput').value || 50);
-            let delay = Math.max(1, Math.floor((101 - speed) * 0.6));
-
-            for (let [r, c] of solutionPath) {
-                if (isPlayingMode) break;
-                if (mazeMatrix[r][c] === 0) {
-                    drawSingleCell(r, c, 4);
-                    if (delay > 2) await new Promise(r => setTimeout(r, delay));
-                }
-            }
-            isShowingAnswer = false;
-            ['genBtn', 'downloadBtn', 'playBtn'].forEach(id => document.getElementById(id).disabled = false);
-            drawMaze();
-        }
-
-        window.onload = initGame;
+window.onload = initGame;
     </script>
 
     <script type="py">
         import random, sys, asyncio
         from pyscript import document
-        from js import setupCanvas, drawSingleCell, setGameStatus, toggleButtonsAfterGen
+        from js import setupCanvas, drawSingleCell, setGameStatus, enableUIButtons, drawMaze
         from pyodide.ffi import create_proxy
 
         sys.setrecursionlimit(200000)
 
+        current_solution_path = []
+        is_showing_ans = False
+
         def solve_maze(m, w, h, sx, sy, ex, ey):
+            """ 使用 BFS 尋找起點到終點的最短正解路徑 """
             q, parent = [(sx, sy)], {(sx, sy): None}
             while q:
                 cx, cy = q.pop(0)
@@ -281,16 +334,65 @@
                 curr = parent.get(curr)
             return path[::-1]
 
-        def generate_maze_smart(w, h, sx, sy, target_bias):
-            # 針對地圖大小優化的 DFS 生成器
+        def enforce_dead_end(m, w, h, sx, sy, ex, ey):
+            """ 確保終點 100% 為死巷（僅有一條開口連通） """
+            sol = solve_maze(m, w, h, sx, sy, ex, ey)
+            if not sol or len(sol) < 2: return
+
+            # 解答路徑中倒數第二個點（即進入終點的前一格）
+            prev_c, prev_r = sol[-2][1], sol[-2][0]
+
+            # 遍歷終點周圍 4 個相鄰格子
+            dirs = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+            for dx, dy in dirs:
+                nx, ny = ex + dx, ey + dy
+                if 0 <= nx < w and 0 <= ny < h:
+                    # 如果不是來時的正解路徑格子，強制改成牆壁！
+                    if (nx, ny) != (prev_c, prev_r):
+                        m[ny][nx] = 1
+
+            # 為防止封閉牆壁造成周圍區域斷連，進行可達性檢查與導通
+            q = [(sx, sy)]
+            reachable = {(sx, sy)}
+            while q:
+                cx, cy = q.pop(0)
+                for dx, dy in dirs:
+                    nx, ny = cx + dx, cy + dy
+                    if 0 <= nx < w and 0 <= ny < h and m[ny][nx] != 1 and (nx, ny) not in reachable:
+                        reachable.add((nx, ny))
+                        q.append((nx, ny))
+
+            # 將所有因封閉終點而無法到達的通路格打通至最近的連通區域
+            for r in range(1, h, 2):
+                for c in range(1, w, 2):
+                    if m[r][c] == 0 and (c, r) not in reachable:
+                        # 從此孤立點尋找相鄰的已連通點打通
+                        for dx, dy in [(-2, 0), (2, 0), (0, -2), (0, 2)]:
+                            nx, ny = c + dx, r + dy
+                            if (nx, ny) in reachable:
+                                mx, my = c + dx//2, r + dy//2
+                                m[my][mx] = 0
+                                # 重新更新可達集合
+                                sub_q = [(c, r)]
+                                reachable.add((c, r))
+                                while sub_q:
+                                    scx, scy = sub_q.pop(0)
+                                    for ddx, ddy in dirs:
+                                        snx, sny = scx + ddx, scy + ddy
+                                        if 0 <= snx < w and 0 <= sny < h and m[sny][snx] != 1 and (snx, sny) not in reachable:
+                                            reachable.add((snx, sny))
+                                            sub_q.append((snx, sny))
+                                break
+
+        def generate_raw_maze(w, h, sx, sy, ex, ey):
+            """ 使用 DFS 挖掘全迷宮 """
             m = [[1] * w for _ in range(h)]
             visited, stack = {(sx, sy)}, [(sx, sy)]
             m[sy][sx] = 0
             history = [[sy, sx, 0]]
             
             while stack:
-                # 依尺寸調節分支隨機度
-                cx, cy = stack[random.randint(0, len(stack)-1)] if random.random() < target_bias and len(stack) > 1 else stack[-1]
+                cx, cy = stack[-1]
                 dirs = [(0, -2), (0, 2), (-2, 0), (2, 0)]
                 random.shuffle(dirs)
                 carved = False
@@ -301,120 +403,122 @@
                         m[my][mx] = m[ny][nx] = 0
                         visited.add((nx, ny))
                         stack.append((nx, ny))
-                        
                         history.append([my, mx, 0])
                         history.append([ny, nx, 5])
                         carved = True
                         break
                 if not carved:
-                    stack.remove((cx, cy))
+                    stack.pop()
                     history.append([cy, cx, 0])
+
+            # 100% 強制終點改為死巷，並自動修復連通性
+            enforce_dead_end(m, w, h, sx, sy, ex, ey)
+
             return m, history
 
-        def seal_end_forks(m, w, h, sol, ex, ey):
-            if len(sol) < 2: return
-            py, px = sol[-2]
-            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-                nx, ny = ex + dx, ey + dy
-                if 0 <= nx < w and 0 <= ny < h and (ny, nx) != (py, px):
-                    m[ny][nx] = 1
-
         def parse_coord(id_x, id_y, max_val):
-            try: x, y = int(document.querySelector(id_x).value), int(document.querySelector(id_y).value)
+            try:
+                el_x = document.querySelector(id_x)
+                el_y = document.querySelector(id_y)
+                x = int(el_x.value) if el_x else 1
+                y = int(el_y.value) if el_y else 1
             except: x, y = 1, 1
             x = max(1, x - 1 if x % 2 == 0 else x)
             y = max(1, y - 1 if y % 2 == 0 else y)
             return min(x, max_val[0] - 2), min(y, max_val[1] - 2)
 
         async def generate_maze_animated(event):
+            global current_solution_path
             btn = document.querySelector("#genBtn")
-            btn.disabled = True
+            if btn: btn.disabled = True
             
-            try: w, h = int(document.querySelector("#widthInput").value), int(document.querySelector("#heightInput").value)
+            try:
+                w_el = document.querySelector("#widthInput")
+                h_el = document.querySelector("#heightInput")
+                w = int(w_el.value) if w_el else 21
+                h = int(h_el.value) if h_el else 21
             except: w, h = 21, 21
+
             w = max(5, w - 1 if w % 2 == 0 else w)
             h = max(5, h - 1 if h % 2 == 0 else h)
-            document.querySelector("#widthInput").value, document.querySelector("#heightInput").value = str(w), str(h)
+            if document.querySelector("#widthInput"): document.querySelector("#widthInput").value = str(w)
+            if document.querySelector("#heightInput"): document.querySelector("#heightInput").value = str(h)
 
             sx, sy = parse_coord("#startXInput", "#startYInput", (w, h))
             ex, ey = parse_coord("#endXInput", "#endYInput", (w, h))
 
-            setupCanvas(w, h, sx, sy)
+            setupCanvas(w, h, sx, sy, ex, ey)
             setGameStatus("generating", "")
 
-            # 根據地圖總格子數動態計算目標路徑占比與比重
+            await asyncio.sleep(0.01)
+
+            maze, history = generate_raw_maze(w, h, sx, sy, ex, ey)
+            current_solution_path = solve_maze(maze, w, h, sx, sy, ex, ey)
+            
+            passages = sum(row.count(0) for row in maze)
+            ratio = (len(current_solution_path) / passages * 100) if passages > 0 else 0
+            final_ratio = f"{ratio:.1f}% ({len(current_solution_path)}/{passages} 格)"
+
             total_cells = w * h
-            if total_cells < 100:           # 超小迷宮 (如 7x7)
-                target_min, target_max = 0.55, 0.75
-                bias = 0.05
-            elif total_cells < 2500:        # 中小型迷宮 (如 21x21~49x49)
-                target_min, target_max = 0.50, 0.70
-                bias = 0.15
-            else:                          # 大型與超大迷宮 (如 101x101~251x251)
-                target_min, target_max = 0.45, 0.65
-                bias = 0.35
-
-            maze, best_history, path_sol, final_ratio = None, [], [], ""
-            max_attempts = 15 if total_cells > 10000 else 60  # 超大迷宮適度減少搜尋嘗試以保持流暢
-
-            for attempt in range(max_attempts):
-                # 每運算一次讓出主線程控制權，避免網頁未響應/卡死
-                if attempt % 3 == 0:
-                    await asyncio.sleep(0)
-
-                tmp, history = generate_maze_smart(w, h, sx, sy, bias)
-                sol = solve_maze(tmp, w, h, sx, sy, ex, ey)
-                if not sol: continue
-                
-                seal_end_forks(tmp, w, h, sol, ex, ey)
-                sol = solve_maze(tmp, w, h, sx, sy, ex, ey)
-                if not sol: continue
-
-                passages = sum(row.count(0) for row in tmp)
-                if passages > 0:
-                    ratio = len(sol) / passages
-                    if target_min <= ratio <= target_max or attempt == max_attempts - 1:
-                        maze, best_history, path_sol = tmp, history, sol
-                        final_ratio = f"{ratio*100:.1f}% ({len(sol)}/{passages} 格)"
-                        break
-
-            # 動態動畫速度調節 (大迷宮自動跳幀/加速)
-            try: speed = int(document.querySelector("#speedInput").value)
-            except: speed = 80
+            try:
+                sp_el = document.querySelector("#speedInput")
+                speed = int(sp_el.value) if sp_el else 101
+            except: speed = 101
 
             delay = 0 if speed >= 101 or total_cells > 5000 else max(0.001, (101 - speed) * 0.0015)
-            step_skip = 1 if total_cells < 2500 else (4 if total_cells < 10000 else 15)
+            step_skip = 1 if total_cells < 2500 else (4 if total_cells < 10000 else 20)
 
-            # 動畫播映
-            if maze and best_history:
+            if maze and history:
                 last_head = None
-                for step_idx, item in enumerate(best_history):
+                for step_idx, item in enumerate(history):
                     r, c, val = item
                     if last_head:
-                        drawSingleCell(last_head[0], last_head[1], 0)
+                        drawSingleCell(last_head[0], last_head[1], maze[last_head[0]][last_head[1]])
                     
-                    drawSingleCell(r, c, val)
+                    draw_val = maze[r][c] if maze[r][c] == 1 else val
+                    drawSingleCell(r, c, draw_val)
                     last_head = (r, c) if val == 5 else None
 
                     if step_idx % step_skip == 0:
                         if delay > 0: await asyncio.sleep(delay)
-                        elif step_idx % 200 == 0: await asyncio.sleep(0)  # 超大地圖防止繪製積壓
+                        elif step_idx % 200 == 0: await asyncio.sleep(0)
 
-                # 最終呈現全貌
-                for r in range(h):
-                    for c in range(w):
-                        drawSingleCell(r, c, maze[r][c])
+            # 重新刷一次 canvas 確保最後強制的死巷牆壁有正確繪製
+            drawMaze()
 
-                maze[sy][sx], maze[ey][ex] = 2, 3
-                drawSingleCell(sy, sx, 2)
-                drawSingleCell(ey, ex, 3)
+            # 重新填上起點與終點顏色
+            maze[sy][sx] = 2
+            maze[ey][ex] = 3
+            drawSingleCell(sy, sx, 2)
+            drawSingleCell(ey, ex, 3)
 
-            toggleButtonsAfterGen(path_sol)
+            enableUIButtons()
             setGameStatus("ready", final_ratio)
-            btn.disabled = False
+            if btn: btn.disabled = False
 
-        click_proxy = create_proxy(lambda e: asyncio.ensure_future(generate_maze_animated(e)))
-        document.querySelector("#genBtn").addEventListener("click", click_proxy)
+        async def show_answer_animated(event):
+            global is_showing_ans, current_solution_path
+            if is_showing_ans or not current_solution_path: return
+            is_showing_ans = True
+
+            for p in current_solution_path:
+                r, c = p[0], p[1]
+                if (c, r) != (current_solution_path[0][1], current_solution_path[0][0]) and \
+                   (c, r) != (current_solution_path[-1][1], current_solution_path[-1][0]):
+                    drawSingleCell(r, c, 9)
+                    await asyncio.sleep(0.015)
+
+            is_showing_ans = False
+
+        click_gen_proxy = create_proxy(lambda e: asyncio.ensure_future(generate_maze_animated(e)))
+        click_ans_proxy = create_proxy(lambda e: asyncio.ensure_future(show_answer_animated(e)))
+
+        gen_btn = document.querySelector("#genBtn")
+        if gen_btn: gen_btn.addEventListener("click", click_gen_proxy)
+
+        ans_btn = document.querySelector("#ansBtn")
+        if ans_btn: ans_btn.addEventListener("click", click_ans_proxy)
+
         asyncio.ensure_future(generate_maze_animated(None))
     </script>
 </body>
