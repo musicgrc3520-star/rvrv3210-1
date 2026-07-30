@@ -2,27 +2,96 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" sizes="400x500" href="https://musicgrc3520-star.github.io/loge.jpg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>生成迷宮</title>
     <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
     <style>
-        body { margin: 0; background: #1a1a24; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; color: #fff; user-select: none; }
-        #main-action-bar { margin-bottom: 12px; display: flex; gap: 10px; }
-        button { font-weight: bold; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-        button:disabled { background: #555 !important; color: #888 !important; cursor: not-allowed; }
+        body { 
+            margin: 0; 
+            background: #1a1a24; 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            color: #fff; 
+            user-select: none; 
+            position: relative;
+        }
+
+        #main-action-bar { 
+            width: 90%;
+            max-width: 800px;
+            margin-bottom: 12px; 
+            display: flex; 
+            justify-content: flex-start; 
+            gap: 10px; 
+        }
+
+        button { 
+            font-weight: bold; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        
+        button:disabled { 
+            background: #444 !important; 
+            color: #888 !important; 
+            cursor: not-allowed; 
+            opacity: 0.6;
+        }
+
         #settingsToggleBtn { background: #6c757d; color: #fff; }
         #playBtn { background: #00ff88; color: #111; }
         #playBtn.playing-mode { background: #ee5253; color: #fff; }
         #downloadBtn { background: #00a8ff; color: #fff; }
         #genBtn { background: #00ff88; color: #111; }
         #ansBtn { background: #ffdd59; color: #111; }
-        #control-panel { background: rgba(30, 33, 41, 0.98); padding: 16px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; border: 1px solid #4a4a5a; position: absolute; top: 70px; z-index: 100; width: 340px; }
+
+        #control-panel { 
+            background: rgba(30, 33, 41, 0.98); 
+            padding: 16px; 
+            border-radius: 8px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            border: 1px solid #4a4a5a; 
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 100; 
+            width: 340px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
         #control-panel.hidden { display: none !important; }
-        .row { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
+
+        .row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
         .inputs { display: flex; gap: 4px; align-items: center; }
-        input[type="number"], select { padding: 5px; border-radius: 4px; border: 1px solid #555; background: #2b2b36; color: #fff; font-weight: bold; font-size: 13px; text-align: center; }
-        input[type="number"] { width: 50px; }
+        
+        input[type="number"], select { 
+            padding: 4px 6px; 
+            border-radius: 4px; 
+            border: 1px solid #555; 
+            background: #2b2b36; 
+            color: #fff; 
+            font-weight: bold; 
+            font-size: 13px; 
+            text-align: center; 
+        }
+        input[type="number"] { width: 48px; }
+        input[type="color"] { border: none; width: 30px; height: 26px; cursor: pointer; background: transparent; }
+
+        #genSpeedRow.hidden { display: none !important; }
+
         #maze-wrapper { background: #0e0e12; padding: 10px; border-radius: 8px; border: 2px solid #3a3a4a; }
         canvas { display: block; background: #000; }
         #hud { margin-top: 15px; background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 6px; color: #00ff88; font-family: monospace; font-size: 16px; border: 1px solid #00ff88; text-align: center; }
@@ -38,16 +107,50 @@
     </div>
 
     <div id="control-panel">
-        <div class="row"><label>迷宮尺寸 X & Y(5~251):</label><div class="inputs"><input type="number" id="widthInput" value="21" step="2" min="5" max="251"><span>x</span><input type="number" id="heightInput" value="21" step="2" min="5" max="251"></div></div>
-        <div class="row"><label>生成/解答速度(1~101):</label><div class="inputs"><input type="number" id="speedInput" value="101" min="1" max="101"><span>/</span><input type="number" id="ansSpeedInput" value="50" min="1" max="101"></div></div>
+        <div class="row">
+            <label>迷宮模式:</label>
+            <div class="inputs">
+                <select id="modeSelect">
+                    <option value="line" selected>線條模式 (Thin Wall)</option>
+                    <option value="solid">實心模式 (Block Grid)</option>
+                </select>
+            </div>
+        </div>
+        <div class="row"><label>迷宮尺寸 X & Y:</label><div class="inputs"><input type="number" id="widthInput" value="20" min="3" max="251"><span>x</span><input type="number" id="heightInput" value="20" min="3" max="251"></div></div>
         
+        <div class="row id-gen-speed hidden" id="genSpeedRow">
+            <label>生成速度(1~101):</label>
+            <div class="inputs"><input type="number" id="genSpeedInput" value="80" min="1" max="101"></div>
+        </div>
+        
+        <div class="row"><label>解答速度(1~101):</label><div class="inputs"><input type="number" id="ansSpeedInput" value="50" min="1" max="101"></div></div>
+        
+        <hr style="border: 0.5px solid #3a3a4a; width: 100%; margin: 4px 0;">
+
+        <!-- 顏色選擇設定 -->
+        <div class="row"><label>牆壁顏色:</label><input type="color" id="wallColorInput" value="#393c51"></div>
+        <div class="row"><label>通道/背景顏色:</label><input type="color" id="bgColorInput" value="#000000"></div>
+        <div class="row"><label>起點顏色:</label><input type="color" id="startColorInput" value="#10B981"></div>
+        <div class="row"><label>終點顏色:</label><input type="color" id="endColorInput" value="#EF4444"></div>
+
+        <hr style="border: 0.5px solid #3a3a4a; width: 100%; margin: 4px 0;">
+
         <div class="row">
             <label>起點 (X, Y):</label>
             <div class="inputs">
                 <select id="startPresetSelect">
-                    <option value="custom">自訂</option><option value="top-left" selected>左上</option><option value="top-right">右上</option><option value="bottom-left">左下</option><option value="bottom-right">右下</option><option value="center">中間</option>
+                    <option value="custom">自訂</option>
+                    <option value="top-left" selected>左上</option>
+                    <option value="top-right">右上</option>
+                    <option value="bottom-left">左下</option>
+                    <option value="bottom-right">右下</option>
+                    <option value="center">中間</option>
+                    <option value="top-center">上中</option>
+                    <option value="bottom-center">下中</option>
+                    <option value="left-center">左中</option>
+                    <option value="right-center">右中</option>
                 </select>
-                <input type="number" id="startXInput" value="1"><span>,</span><input type="number" id="startYInput" value="1">
+                <input type="number" id="startXInput" value="0"><span>,</span><input type="number" id="startYInput" value="0">
             </div>
         </div>
 
@@ -55,13 +158,22 @@
             <label>終點 (X, Y):</label>
             <div class="inputs">
                 <select id="endPresetSelect">
-                    <option value="custom">自訂</option><option value="top-left">左上</option><option value="top-right">右上</option><option value="bottom-left">左下</option><option value="bottom-right" selected>右下</option><option value="center">中間</option>
+                    <option value="custom">自訂</option>
+                    <option value="top-left">左上</option>
+                    <option value="top-right">右上</option>
+                    <option value="bottom-left">左下</option>
+                    <option value="bottom-right" selected>右下</option>
+                    <option value="center">中間</option>
+                    <option value="top-center">上中</option>
+                    <option value="bottom-center">下中</option>
+                    <option value="left-center">左中</option>
+                    <option value="right-center">右中</option>
                 </select>
                 <input type="number" id="endXInput" value="19"><span>,</span><input type="number" id="endYInput" value="19">
             </div>
         </div>
 
-        <div style="display:flex; gap:10px; justify-content:center; margin-top:5px;">
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:8px;">
             <button id="genBtn">重新生成</button>
             <button id="ansBtn" disabled>顯示答案</button>
         </div>
@@ -74,241 +186,457 @@
     </div>
 
     <script>
-let mazeMatrix = [];
-let mazeW = 21, mazeH = 21;
-let startX = 1, startY = 1, endX = 19, endY = 19;
-let playerX = 1, playerY = 1;
-let isPlayingMode = false;
-let isGenerating = false;
-let isShowingAnswer = false;
-let playerPathHistory = [];
-let activeKeys = new Set();
+    (function() {
+        window.mazeEngine = {
+            mode: 'line',
+            hWalls: null,
+            vWalls: null,
+            gridGrid: null,
+            gridW: 20,
+            gridH: 20,
+            startX: 0,
+            startY: 0,
+            endX: 19,
+            endY: 19,
+            playerX: 0,
+            playerY: 0,
+            isPlaying: false,
+            playerPath: [],
+            solutionPath: [],
+            activeKeys: new Set(),
+            keyTimer: null,
+            
+            init: function() {
+                this.canvas = document.getElementById('mazeCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.bindEvents();
+                this.updateModeUI();
+            },
 
-let moveDelay = 200;
-let moveInterval = 90;
-let keyPressTime = 0;
-let isFirstMove = true;
+            bindEvents: function() {
+                const self = this;
 
-let canvas, ctx;
+                window.addEventListener('keydown', (e) => {
+                    if (!self.isPlaying) return;
+                    if (['KeyW', 'ArrowUp', 'KeyS', 'ArrowDown', 'KeyA', 'ArrowLeft', 'KeyD', 'ArrowRight'].includes(e.code)) {
+                        e.preventDefault();
+                        if (!self.activeKeys.has(e.code)) {
+                            self.activeKeys.clear();
+                            self.activeKeys.add(e.code);
+                            self.startContinuousMove();
+                        }
+                    }
+                });
 
-const COLOR_WALL = '#393c51';
-const COLOR_PATH = '#000000';
-const COLOR_START = '#10B981';
-const COLOR_END = '#EF4444';
-const COLOR_ANS = '#EEFF00';
+                window.addEventListener('keyup', (e) => {
+                    if (['KeyW', 'ArrowUp', 'KeyS', 'ArrowDown', 'KeyA', 'ArrowLeft', 'KeyD', 'ArrowRight'].includes(e.code)) {
+                        self.activeKeys.delete(e.code);
+                        if (self.activeKeys.size === 0) {
+                            clearInterval(self.keyTimer);
+                            self.keyTimer = null;
+                        }
+                    }
+                });
 
-function initGame() {
-    canvas = document.getElementById('mazeCanvas');
-    ctx = canvas.getContext('2d');
+                document.getElementById('settingsToggleBtn').onclick = () => {
+                    if (!self.isPlaying) document.getElementById('control-panel').classList.toggle('hidden');
+                };
 
-    ['widthInput', 'heightInput'].forEach(id => {
-        let el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => { applyPreset('start'); applyPreset('end'); });
-    });
+                document.getElementById('playBtn').onclick = () => self.togglePlay();
 
-    ['start', 'end'].forEach(t => {
-        let el = document.getElementById(t + 'PresetSelect');
-        if (el) el.addEventListener('change', () => applyPreset(t));
-    });
+                document.getElementById('downloadBtn').onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = self.canvas.toDataURL();
+                    a.download = `maze_${self.gridW}x${self.gridH}.png`;
+                    a.click();
+                };
 
-    window.addEventListener('keydown', (e) => {
-        if (!isPlayingMode || !mazeMatrix.length || isGenerating || isShowingAnswer) return;
-        if (['KeyW', 'ArrowUp', 'KeyS', 'ArrowDown', 'KeyA', 'ArrowLeft', 'KeyD', 'ArrowRight'].includes(e.code)) {
-            e.preventDefault();
-            if (!activeKeys.has(e.code)) {
-                activeKeys.clear();
-                activeKeys.add(e.code);
-                isFirstMove = true;
-                keyPressTime = performance.now();
-                processContinuousMove();
+                document.getElementById('modeSelect').addEventListener('change', (e) => {
+                    self.updateModeUI();
+                });
+
+                ['widthInput', 'heightInput'].forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el) el.addEventListener('input', () => {
+                        if (document.getElementById('modeSelect').value === 'solid') {
+                            self.enforceOddDimensions();
+                        }
+                        self.applyPreset('start'); 
+                        self.applyPreset('end'); 
+                    });
+                });
+
+                ['start', 'end'].forEach(t => {
+                    let el = document.getElementById(t + 'PresetSelect');
+                    if (el) el.addEventListener('change', () => {
+                        self.applyPreset(t);
+                        self.syncPresetOptions();
+                    });
+                });
+
+                ['startXInput', 'startYInput', 'endXInput', 'endYInput'].forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el) el.addEventListener('input', () => {
+                        self.checkIfCustomCoord();
+                        self.syncPresetOptions();
+                    });
+                });
+
+                ['wallColorInput', 'bgColorInput', 'startColorInput', 'endColorInput'].forEach(id => {
+                    let el = document.getElementById(id);
+                    if (el) el.addEventListener('input', () => self.draw());
+                });
+            },
+
+            updateModeUI: function() {
+                const mode = document.getElementById('modeSelect').value;
+                const genSpeedRow = document.getElementById('genSpeedRow');
+                
+                if (mode === 'solid') {
+                    genSpeedRow.classList.remove('hidden');
+                    this.enforceOddDimensions();
+                } else {
+                    genSpeedRow.classList.add('hidden');
+                }
+                this.applyPreset('start');
+                this.applyPreset('end');
+                this.syncPresetOptions();
+            },
+
+            enforceOddDimensions: function() {
+                ['widthInput', 'heightInput'].forEach(id => {
+                    let el = document.getElementById(id);
+                    let val = parseInt(el.value) || 21;
+                    if (val % 2 === 0) {
+                        el.value = val + 1;
+                    }
+                });
+            },
+
+            // 修正：針對實心模式（solid）與線條模式（line）計算正確不貼邊的預設座標
+            getPresetCoords: function(sel, w, h) {
+                const isSolid = document.getElementById('modeSelect').value === 'solid';
+                
+                // 實心模式最小起止範圍：從 1 開始，倒數 -2
+                let minX = isSolid ? 1 : 0;
+                let minY = isSolid ? 1 : 0;
+                let maxX = isSolid ? w - 2 : w - 1;
+                let maxY = isSolid ? h - 2 : h - 1;
+
+                let x = minX, y = minY;
+
+                const makeOdd = (v) => (isSolid && v % 2 === 0) ? v - 1 : v;
+
+                if (sel === 'top-left') { x = minX; y = minY; }
+                else if (sel === 'top-right') { x = maxX; y = minY; }
+                else if (sel === 'bottom-left') { x = minX; y = maxY; }
+                else if (sel === 'bottom-right') { x = maxX; y = maxY; }
+                else if (sel === 'center') { x = makeOdd(Math.floor(w / 2)); y = makeOdd(Math.floor(h / 2)); }
+                else if (sel === 'top-center') { x = makeOdd(Math.floor(w / 2)); y = minY; }
+                else if (sel === 'bottom-center') { x = makeOdd(Math.floor(w / 2)); y = maxY; }
+                else if (sel === 'left-center') { x = minX; y = makeOdd(Math.floor(h / 2)); }
+                else if (sel === 'right-center') { x = maxX; y = makeOdd(Math.floor(h / 2)); }
+                
+                return { x, y };
+            },
+
+            applyPreset: function(type) {
+                let w = parseInt(document.getElementById('widthInput').value) || 20;
+                let h = parseInt(document.getElementById('heightInput').value) || 20;
+                let sel = document.getElementById(type + 'PresetSelect').value;
+                if (sel === 'custom') return;
+
+                let coords = this.getPresetCoords(sel, w, h);
+                document.getElementById(type + 'XInput').value = coords.x;
+                document.getElementById(type + 'YInput').value = coords.y;
+            },
+
+            checkIfCustomCoord: function() {
+                let w = parseInt(document.getElementById('widthInput').value) || 20;
+                let h = parseInt(document.getElementById('heightInput').value) || 20;
+
+                ['start', 'end'].forEach(type => {
+                    let selEl = document.getElementById(type + 'PresetSelect');
+                    let currSel = selEl.value;
+                    if (currSel === 'custom') return;
+
+                    let curX = parseInt(document.getElementById(type + 'XInput').value);
+                    let curY = parseInt(document.getElementById(type + 'YInput').value);
+                    let target = this.getPresetCoords(currSel, w, h);
+
+                    if (curX !== target.x || curY !== target.y) {
+                        selEl.value = 'custom';
+                    }
+                });
+            },
+
+            syncPresetOptions: function() {
+                let startSel = document.getElementById('startPresetSelect').value;
+                let endSel = document.getElementById('endPresetSelect').value;
+
+                Array.from(document.getElementById('endPresetSelect').options).forEach(opt => {
+                    if (opt.value !== 'custom' && opt.value === startSel) opt.disabled = true;
+                    else opt.disabled = false;
+                });
+
+                Array.from(document.getElementById('startPresetSelect').options).forEach(opt => {
+                    if (opt.value !== 'custom' && opt.value === endSel) opt.disabled = true;
+                    else opt.disabled = false;
+                });
+            },
+
+            setMazeData: function(mode, w, h, sx, sy, ex, ey, hwJson, vwJson, gridJson, solJson) {
+                this.mode = mode;
+                this.gridW = w;
+                this.gridH = h;
+                this.startX = sx;
+                this.startY = sy;
+                this.endX = ex;
+                this.endY = ey;
+
+                if (mode === 'line') {
+                    this.hWalls = JSON.parse(hwJson);
+                    this.vWalls = JSON.parse(vwJson);
+                    this.gridGrid = null;
+                } else {
+                    this.gridGrid = JSON.parse(gridJson);
+                    this.hWalls = null;
+                    this.vWalls = null;
+                }
+                
+                this.solutionPath = JSON.parse(solJson);
+
+                let maxDim = Math.max(w, h);
+                let cellSize = Math.max(12, Math.floor(600 / maxDim));
+                this.canvas.width = w * cellSize;
+                this.canvas.height = h * cellSize;
+
+                this.playerX = sx;
+                this.playerY = sy;
+                this.playerPath = [{ r: sy, c: sx }];
+
+                this.draw();
+            },
+
+            togglePlay: function() {
+                this.isPlaying = !this.isPlaying;
+                const btn = document.getElementById('playBtn');
+                const settingsBtn = document.getElementById('settingsToggleBtn');
+                const panel = document.getElementById('control-panel');
+
+                if (this.isPlaying) {
+                    btn.innerText = "❌ 結束遊玩";
+                    btn.classList.add('playing-mode');
+                    panel.classList.add('hidden');
+                    settingsBtn.disabled = true;
+
+                    this.playerX = this.startX;
+                    this.playerY = this.startY;
+                    this.playerPath = [{ r: this.startY, c: this.startX }];
+                } else {
+                    btn.innerText = "🎮 開始遊玩";
+                    btn.classList.remove('playing-mode');
+                    settingsBtn.disabled = false;
+                    clearInterval(this.keyTimer);
+                    this.keyTimer = null;
+                }
+                this.draw();
+            },
+
+            startContinuousMove: function() {
+                if (this.keyTimer) clearInterval(this.keyTimer);
+                this.moveOnce();
+                this.keyTimer = setInterval(() => this.moveOnce(), 80);
+            },
+
+            moveOnce: function() {
+                if (!this.isPlaying) return;
+                let dx = 0, dy = 0;
+                if (this.activeKeys.has('KeyW') || this.activeKeys.has('ArrowUp')) dy = -1;
+                else if (this.activeKeys.has('KeyS') || this.activeKeys.has('ArrowDown')) dy = 1;
+                else if (this.activeKeys.has('KeyA') || this.activeKeys.has('ArrowLeft')) dx = -1;
+                else if (this.activeKeys.has('KeyD') || this.activeKeys.has('ArrowRight')) dx = 1;
+
+                if (dx !== 0 || dy !== 0) {
+                    this.tryMove(dx, dy);
+                }
+            },
+
+            canMove: function(x, y, dx, dy) {
+                let nx = x + dx, ny = y + dy;
+                if (nx < 0 || nx >= this.gridW || ny < 0 || ny >= this.gridH) return false;
+
+                if (this.mode === 'line') {
+                    if (dy === -1) return !this.hWalls[y][x];
+                    if (dy === 1) return !this.hWalls[y + 1][x];
+                    if (dx === -1) return !this.vWalls[y][x];
+                    if (dx === 1) return !this.vWalls[y][x + 1];
+                } else {
+                    return this.gridGrid[ny][nx] === 0;
+                }
+                return false;
+            },
+
+            tryMove: function(dx, dy) {
+                if (this.canMove(this.playerX, this.playerY, dx, dy)) {
+                    this.playerX += dx;
+                    this.playerY += dy;
+                    this.playerPath.push({ r: this.playerY, c: this.playerX });
+                    this.draw();
+
+                    if (this.playerX === this.endX && this.playerY === this.endY) {
+                        clearInterval(this.keyTimer);
+                        this.keyTimer = null;
+                        this.activeKeys.clear();
+                        setTimeout(() => alert("🎉 恭喜抵達終點！"), 50);
+                    }
+                }
+            },
+
+            draw: function(overrideAnsPathJson = null, overrideGridJson = null) {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+                const cw = w / this.gridW;
+                const ch = h / this.gridH;
+
+                const wallColor = document.getElementById('wallColorInput').value;
+                const bgColor = document.getElementById('bgColorInput').value;
+                const startColor = document.getElementById('startColorInput').value;
+                const endColor = document.getElementById('endColorInput').value;
+
+                ctx.clearRect(0, 0, w, h);
+
+                // 1. 底色 (通道背景)
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, w, h);
+
+                // 2. 實心模式繪製
+                let activeGrid = this.gridGrid;
+                if (overrideGridJson) {
+                    try { activeGrid = JSON.parse(overrideGridJson); } catch(e) {}
+                }
+
+                if (this.mode === 'solid' && activeGrid) {
+                    ctx.fillStyle = wallColor;
+                    for (let r = 0; r < this.gridH; r++) {
+                        for (let c = 0; c < this.gridW; c++) {
+                            if (activeGrid[r][c] === 1) {
+                                ctx.fillRect(c * cw, r * ch, cw + 0.5, ch + 0.5);
+                            }
+                        }
+                    }
+                }
+
+                // 3. 起點與終點
+                ctx.fillStyle = startColor;
+                ctx.fillRect(this.startX * cw, this.startY * ch, cw, ch);
+
+                ctx.fillStyle = endColor;
+                ctx.fillRect(this.endX * cw, this.endY * ch, cw, ch);
+
+                // 4. 解答路線繪製
+                let drawAns = [];
+                if (overrideAnsPathJson) {
+                    try {
+                        drawAns = typeof overrideAnsPathJson === 'string' ? JSON.parse(overrideAnsPathJson) : overrideAnsPathJson;
+                    } catch(e) {}
+                }
+
+                if (drawAns.length > 0) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#FFEE00';
+                    ctx.lineWidth = Math.max(3, Math.floor(cw * 0.35));
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+
+                    drawAns.forEach((p, idx) => {
+                        let x = p[1] * cw + cw / 2;
+                        let y = p[0] * ch + ch / 2;
+                        if (idx === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    });
+                    ctx.stroke();
+                }
+
+                // 5. 玩家軌跡
+                if (this.isPlaying && this.playerPath.length > 0) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#06B6D4';
+                    ctx.lineWidth = Math.max(3, Math.floor(cw * 0.3));
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+
+                    this.playerPath.forEach((p, idx) => {
+                        let x = p.c * cw + cw / 2;
+                        let y = p.r * ch + ch / 2;
+                        if (idx === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    });
+                    ctx.stroke();
+
+                    // 玩家頭標
+                    ctx.fillStyle = '#3B82F6';
+                    ctx.beginPath();
+                    ctx.arc(this.playerX * cw + cw / 2, this.playerY * ch + ch / 2, Math.max(3, cw * 0.3), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 6. 線條牆壁繪製
+                if (this.mode === 'line' && this.hWalls && this.vWalls) {
+                    ctx.strokeStyle = wallColor;
+                    ctx.lineWidth = Math.max(2, Math.floor(cw * 0.12));
+                    ctx.lineCap = 'round';
+
+                    for (let r = 0; r <= this.gridH; r++) {
+                        for (let c = 0; c < this.gridW; c++) {
+                            if (this.hWalls[r] && this.hWalls[r][c]) {
+                                ctx.beginPath();
+                                ctx.moveTo(c * cw, r * ch);
+                                ctx.lineTo((c + 1) * cw, r * ch);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+
+                    for (let r = 0; r < this.gridH; r++) {
+                        for (let c = 0; c <= this.gridW; c++) {
+                            if (this.vWalls[r] && this.vWalls[r][c]) {
+                                ctx.beginPath();
+                                ctx.moveTo(c * cw, r * ch);
+                                ctx.lineTo(c * cw, (r + 1) * ch);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
             }
-        }
-    });
-
-    window.addEventListener('keyup', (e) => { activeKeys.delete(e.code); });
-
-    const settingsBtn = document.getElementById('settingsToggleBtn');
-    if (settingsBtn) {
-        settingsBtn.onclick = () => {
-            if (!isPlayingMode) document.getElementById('control-panel').classList.toggle('hidden');
         };
-    }
 
-    document.getElementById('playBtn').onclick = togglePlayMode;
-    document.getElementById('downloadBtn').onclick = () => {
-        const a = document.createElement('a');
-        a.href = canvas.toDataURL();
-        a.download = `maze_${mazeW}x${mazeH}.png`;
-        a.click();
-    };
+        window.onload = () => window.mazeEngine.init();
+    })();
 
-    applyPreset('start');
-    applyPreset('end');
-    requestAnimationFrame(gameLoop);
-}
-
-function gameLoop(timestamp) {
-    if (isPlayingMode && activeKeys.size > 0) {
-        let elapsed = timestamp - keyPressTime;
-        if (isFirstMove && elapsed > moveDelay) {
-            isFirstMove = false;
-            keyPressTime = timestamp;
-            processContinuousMove();
-        } else if (!isFirstMove && elapsed > moveInterval) {
-            keyPressTime = timestamp;
-            processContinuousMove();
-        }
-    }
-    requestAnimationFrame(gameLoop);
-}
-
-function processContinuousMove() {
-    if (activeKeys.has('KeyW') || activeKeys.has('ArrowUp')) movePlayer(0, -1);
-    else if (activeKeys.has('KeyS') || activeKeys.has('ArrowDown')) movePlayer(0, 1);
-    else if (activeKeys.has('KeyA') || activeKeys.has('ArrowLeft')) movePlayer(-1, 0);
-    else if (activeKeys.has('KeyD') || activeKeys.has('ArrowRight')) movePlayer(1, 0);
-}
-
-function movePlayer(dx, dy) {
-    let nx = playerX + dx, ny = playerY + dy;
-    if (mazeMatrix[ny] && mazeMatrix[ny][nx] !== 1) {
-        playerX = nx; playerY = ny;
-        if (!playerPathHistory.some(p => p.r === ny && p.c === nx)) {
-            playerPathHistory.push({ r: ny, c: nx });
-        }
-        drawMaze();
-        if (mazeMatrix[playerY][playerX] === 3) {
-            activeKeys.clear();
-            setTimeout(() => alert("🎉 恭喜抵達終點！"), 50);
-        }
-    }
-}
-
-function applyPreset(type) {
-    try {
-        let w = intVal('#widthInput'), h = intVal('#heightInput');
-        w = maxVal(5, odd(w)); h = maxVal(5, odd(h));
-        let sel = document.getElementById(type + 'PresetSelect').value;
-        let xEl = document.getElementById(type + 'XInput');
-        let yEl = document.getElementById(type + 'YInput');
-        
-        if (sel === 'top-left') { xEl.value = 1; yEl.value = 1; }
-        else if (sel === 'top-right') { xEl.value = w - 2; yEl.value = 1; }
-        else if (sel === 'bottom-left') { xEl.value = 1; yEl.value = h - 2; }
-        else if (sel === 'bottom-right') { xEl.value = w - 2; yEl.value = h - 2; }
-        else if (sel === 'center') { xEl.value = odd(Math.floor(w / 2)); yEl.value = odd(Math.floor(h / 2)); }
-    } catch(e) {}
-}
-
-function setupCanvas(w, h, sx, sy, ex, ey) {
-    mazeW = w; mazeH = h;
-    startX = sx; startY = sy;
-    endX = ex; endY = ey;
-    playerX = sx; playerY = sy;
-    playerPathHistory = [{ r: sy, c: sx }];
-    mazeMatrix = Array.from({ length: h }, () => Array(w).fill(1));
-
-    let maxDim = Math.max(w, h);
-    let cellSize = Math.max(2, Math.floor(600 / maxDim));
-    canvas.width = w * cellSize;
-    canvas.height = h * cellSize;
-    ctx.fillStyle = COLOR_WALL;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-
-function drawSingleCell(r, c, val) {
-    if (!mazeMatrix[r]) mazeMatrix[r] = [];
-    mazeMatrix[r][c] = val;
-    let cw = canvas.width / mazeW;
-    let ch = canvas.height / mazeH;
-
-    if (val === 1) ctx.fillStyle = COLOR_WALL;
-    else if (val === 0) ctx.fillStyle = COLOR_PATH;
-    else if (val === 2) ctx.fillStyle = COLOR_START;
-    else if (val === 3) ctx.fillStyle = COLOR_END;
-    else if (val === 5) ctx.fillStyle = '#F59E0B';
-    else if (val === 9) ctx.fillStyle = COLOR_ANS;
-
-    ctx.fillRect(c * cw, r * ch, cw, ch);
-}
-
-function drawMaze() {
-    let cw = canvas.width / mazeW;
-    let ch = canvas.height / mazeH;
-
-    for (let r = 0; r < mazeH; r++) {
-        for (let c = 0; c < mazeW; c++) {
-            let val = mazeMatrix[r][c];
-            if (val === 1) ctx.fillStyle = COLOR_WALL;
-            else if (val === 0) ctx.fillStyle = COLOR_PATH;
-            else if (val === 2) ctx.fillStyle = COLOR_START;
-            else if (val === 3) ctx.fillStyle = COLOR_END;
-            else if (val === 9) ctx.fillStyle = COLOR_ANS;
-            ctx.fillRect(c * cw, r * ch, cw, ch);
+    function setGameStatus(status, text) {
+        let statusLabel = document.getElementById('statusLabel');
+        if (status === 'generating') {
+            if (statusLabel) statusLabel.innerText = "地圖生成中...";
+        } else {
+            if (statusLabel) statusLabel.innerText = `正解解法占比：${text}`;
         }
     }
 
-    if (isPlayingMode && playerPathHistory.length > 0) {
-        ctx.fillStyle = '#06B6D4';
-        playerPathHistory.forEach(p => {
-            if (!(p.r === startY && p.c === startX) && !(p.r === endY && p.c === endX)) {
-                ctx.fillRect(p.c * cw, p.r * ch, cw, ch);
-            }
-        });
-        ctx.fillStyle = '#3B82F6';
-        ctx.fillRect(playerX * cw, playerY * ch, cw, ch);
+    function enableUIButtons() {
+        document.getElementById('ansBtn').disabled = false;
+        document.getElementById('playBtn').disabled = false;
+        document.getElementById('downloadBtn').disabled = false;
     }
-}
-
-function setGameStatus(status, text) {
-    let statusLabel = document.getElementById('statusLabel');
-    if (status === 'generating') {
-        isGenerating = true;
-        if (statusLabel) statusLabel.innerText = "地圖生成中...";
-    } else {
-        isGenerating = false;
-        if (statusLabel) statusLabel.innerText = `正解解法占比：${text}`;
-    }
-}
-
-function enableUIButtons() {
-    let ansBtn = document.getElementById('ansBtn');
-    let playBtn = document.getElementById('playBtn');
-    let downloadBtn = document.getElementById('downloadBtn');
-
-    if (ansBtn) ansBtn.disabled = false;
-    if (playBtn) playBtn.disabled = false;
-    if (downloadBtn) downloadBtn.disabled = false;
-}
-
-function togglePlayMode() {
-    isPlayingMode = !isPlayingMode;
-    let btn = document.getElementById('playBtn');
-    activeKeys.clear();
-
-    if (isPlayingMode) {
-        btn.innerText = "❌ 結束遊玩";
-        btn.classList.add('playing-mode');
-        playerX = startX; playerY = startY;
-        playerPathHistory = [{ r: startY, c: startX }];
-    } else {
-        btn.innerText = "🎮 開始遊玩";
-        btn.classList.remove('playing-mode');
-    }
-    drawMaze();
-}
-
-function intVal(sel) { let el = document.querySelector(sel); return el ? parseInt(el.value) || 0 : 0; }
-function maxVal(min, val) { return Math.max(min, val); }
-function odd(v) { return v % 2 === 0 ? v - 1 : v; }
-
-window.onload = initGame;
     </script>
 
     <script type="py">
-        import random, sys, asyncio
+        import random, sys, asyncio, json
+        import js
         from pyscript import document
-        from js import setupCanvas, drawSingleCell, setGameStatus, enableUIButtons, drawMaze
+        from js import setGameStatus, enableUIButtons, mazeEngine
         from pyodide.ffi import create_proxy
 
         sys.setrecursionlimit(200000)
@@ -316,17 +644,22 @@ window.onload = initGame;
         current_solution_path = []
         is_showing_ans = False
 
-        def solve_maze(m, w, h, sx, sy, ex, ey):
-            """ 使用 BFS 尋找起點到終點的最短正解路徑 """
+        # --- 線條模式解答 ---
+        def solve_line_maze(w, h, h_walls, v_walls, sx, sy, ex, ey):
             q, parent = [(sx, sy)], {(sx, sy): None}
             while q:
                 cx, cy = q.pop(0)
                 if (cx, cy) == (ex, ey): break
-                for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-                    nx, ny = cx + dx, cy + dy
-                    if 0 <= nx < w and 0 <= ny < h and m[ny][nx] != 1 and (nx, ny) not in parent:
-                        parent[(nx, ny)] = (cx, cy)
-                        q.append((nx, ny))
+                
+                if cy > 0 and not h_walls[cy][cx] and (cx, cy-1) not in parent:
+                    parent[(cx, cy-1)] = (cx, cy); q.append((cx, cy-1))
+                if cy < h - 1 and not h_walls[cy+1][cx] and (cx, cy+1) not in parent:
+                    parent[(cx, cy+1)] = (cx, cy); q.append((cx, cy+1))
+                if cx > 0 and not v_walls[cy][cx] and (cx-1, cy) not in parent:
+                    parent[(cx-1, cy)] = (cx, cy); q.append((cx-1, cy))
+                if cx < w - 1 and not v_walls[cy][cx+1] and (cx+1, cy) not in parent:
+                    parent[(cx+1, cy)] = (cx, cy); q.append((cx+1, cy))
+
             curr, path = (ex, ey), []
             if curr not in parent: return []
             while curr:
@@ -334,181 +667,212 @@ window.onload = initGame;
                 curr = parent.get(curr)
             return path[::-1]
 
-        def enforce_dead_end(m, w, h, sx, sy, ex, ey):
-            """ 確保終點 100% 為死巷（僅有一條開口連通） """
-            sol = solve_maze(m, w, h, sx, sy, ex, ey)
-            if not sol or len(sol) < 2: return
+        def generate_line_maze(w, h, sx, sy, ex, ey):
+            h_walls = [[True] * w for _ in range(h + 1)]
+            v_walls = [[True] * (w + 1) for _ in range(h)]
 
-            # 解答路徑中倒數第二個點（即進入終點的前一格）
-            prev_c, prev_r = sol[-2][1], sol[-2][0]
+            visited = {(sx, sy)}
+            stack = [(sx, sy)]
 
-            # 遍歷終點周圍 4 個相鄰格子
-            dirs = [(0, -1), (0, 1), (-1, 0), (1, 0)]
-            for dx, dy in dirs:
-                nx, ny = ex + dx, ey + dy
-                if 0 <= nx < w and 0 <= ny < h:
-                    # 如果不是來時的正解路徑格子，強制改成牆壁！
-                    if (nx, ny) != (prev_c, prev_r):
-                        m[ny][nx] = 1
-
-            # 為防止封閉牆壁造成周圍區域斷連，進行可達性檢查與導通
-            q = [(sx, sy)]
-            reachable = {(sx, sy)}
-            while q:
-                cx, cy = q.pop(0)
-                for dx, dy in dirs:
-                    nx, ny = cx + dx, cy + dy
-                    if 0 <= nx < w and 0 <= ny < h and m[ny][nx] != 1 and (nx, ny) not in reachable:
-                        reachable.add((nx, ny))
-                        q.append((nx, ny))
-
-            # 將所有因封閉終點而無法到達的通路格打通至最近的連通區域
-            for r in range(1, h, 2):
-                for c in range(1, w, 2):
-                    if m[r][c] == 0 and (c, r) not in reachable:
-                        # 從此孤立點尋找相鄰的已連通點打通
-                        for dx, dy in [(-2, 0), (2, 0), (0, -2), (0, 2)]:
-                            nx, ny = c + dx, r + dy
-                            if (nx, ny) in reachable:
-                                mx, my = c + dx//2, r + dy//2
-                                m[my][mx] = 0
-                                # 重新更新可達集合
-                                sub_q = [(c, r)]
-                                reachable.add((c, r))
-                                while sub_q:
-                                    scx, scy = sub_q.pop(0)
-                                    for ddx, ddy in dirs:
-                                        snx, sny = scx + ddx, scy + ddy
-                                        if 0 <= snx < w and 0 <= sny < h and m[sny][snx] != 1 and (snx, sny) not in reachable:
-                                            reachable.add((snx, sny))
-                                            sub_q.append((snx, sny))
-                                break
-
-        def generate_raw_maze(w, h, sx, sy, ex, ey):
-            """ 使用 DFS 挖掘全迷宮 """
-            m = [[1] * w for _ in range(h)]
-            visited, stack = {(sx, sy)}, [(sx, sy)]
-            m[sy][sx] = 0
-            history = [[sy, sx, 0]]
-            
             while stack:
                 cx, cy = stack[-1]
-                dirs = [(0, -2), (0, 2), (-2, 0), (2, 0)]
-                random.shuffle(dirs)
-                carved = False
-                for dx, dy in dirs:
-                    nx, ny = cx + dx, cy + dy
-                    if 0 < nx < w and 0 < ny < h and (nx, ny) not in visited:
-                        mx, my = cx + dx//2, cy + dy//2
-                        m[my][mx] = m[ny][nx] = 0
-                        visited.add((nx, ny))
-                        stack.append((nx, ny))
-                        history.append([my, mx, 0])
-                        history.append([ny, nx, 5])
-                        carved = True
-                        break
-                if not carved:
+                neighbors = []
+
+                if cy > 0 and (cx, cy - 1) not in visited: neighbors.append((cx, cy - 1, 'U'))
+                if cy < h - 1 and (cx, cy + 1) not in visited: neighbors.append((cx, cy + 1, 'D'))
+                if cx > 0 and (cx - 1, cy) not in visited: neighbors.append((cx - 1, cy, 'L'))
+                if cx < w - 1 and (cx + 1, cy) not in visited: neighbors.append((cx + 1, cy, 'R'))
+
+                if neighbors:
+                    nx, ny, direction = random.choice(neighbors)
+                    if direction == 'U': h_walls[cy][cx] = False
+                    elif direction == 'D': h_walls[cy + 1][cx] = False
+                    elif direction == 'L': v_walls[cy][cx] = False
+                    elif direction == 'R': v_walls[cy][cx + 1] = False
+
+                    visited.add((nx, ny))
+                    stack.append((nx, ny))
+                else:
                     stack.pop()
-                    history.append([cy, cx, 0])
 
-            # 100% 強制終點改為死巷，並自動修復連通性
-            enforce_dead_end(m, w, h, sx, sy, ex, ey)
+            sol = solve_line_maze(w, h, h_walls, v_walls, sx, sy, ex, ey)
+            return h_walls, v_walls, sol
 
-            return m, history
+        # --- 實心模式解答 ---
+        def solve_solid_maze(grid, w, h, sx, sy, ex, ey):
+            q, parent = [(sx, sy)], {(sx, sy): None}
+            while q:
+                cx, cy = q.pop(0)
+                if (cx, cy) == (ex, ey): break
+                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    nx, ny = cx + dx, cy + dy
+                    if 0 <= nx < w and 0 <= ny < h and grid[ny][nx] == 0 and (nx, ny) not in parent:
+                        parent[(nx, ny)] = (cx, cy)
+                        q.append((nx, ny))
 
-        def parse_coord(id_x, id_y, max_val):
+            curr, path = (ex, ey), []
+            if curr not in parent: return []
+            while curr:
+                path.append([curr[1], curr[0]])
+                curr = parent.get(curr)
+            return path[::-1]
+
+        async def generate_solid_maze_animated(w, h, sx, sy, ex, ey, speed):
+            grid = [[1] * w for _ in range(h)]
+            
+            # 將起點與終點預先挖開為通道 (0)
+            grid[sy][sx] = 0
+            grid[ey][ex] = 0
+
+            # 生成從起點開始 DFS
+            stack = [(sx, sy)]
+            visited = {(sx, sy)}
+
+            delay = 0 if speed >= 101 else max(0.0001, (101 - speed) * 0.0005)
+            step_count = 0
+
+            while stack:
+                cx, cy = stack[-1]
+                neighbors = []
+
+                for dx, dy in [(-2, 0), (2, 0), (0, -2), (0, 2)]:
+                    nx, ny = cx + dx, cy + dy
+                    if 1 <= nx < w - 1 and 1 <= ny < h - 1 and (nx, ny) not in visited:
+                        neighbors.append((nx, ny, cx + dx // 2, cy + dy // 2))
+
+                if neighbors:
+                    nx, ny, mx, my = random.choice(neighbors)
+                    grid[my][mx] = 0
+                    grid[ny][nx] = 0
+                    visited.add((nx, ny))
+                    stack.append((nx, ny))
+
+                    step_count += 1
+                    if speed < 101 and step_count % max(1, speed // 10) == 0:
+                        mazeEngine.draw(None, json.dumps(grid))
+                        await asyncio.sleep(delay)
+                else:
+                    stack.pop()
+
+            # 確保終點和最近的 DFS 步數相連
+            if (ex, ey) not in visited:
+                dirs = [(-2, 0), (2, 0), (0, -2), (0, 2)]
+                for dx, dy in dirs:
+                    nx, ny = ex + dx, ey + dy
+                    if 0 < nx < w - 1 and 0 < ny < h - 1 and grid[ny][nx] == 0:
+                        grid[ey + dy // 2][ex + dx // 2] = 0
+                        break
+
+            sol = solve_solid_maze(grid, w, h, sx, sy, ex, ey)
+            return grid, sol
+
+        def parse_coord(id_x, id_y, max_w, max_h, is_solid):
             try:
                 el_x = document.querySelector(id_x)
                 el_y = document.querySelector(id_y)
-                x = int(el_x.value) if el_x else 1
-                y = int(el_y.value) if el_y else 1
-            except: x, y = 1, 1
-            x = max(1, x - 1 if x % 2 == 0 else x)
-            y = max(1, y - 1 if y % 2 == 0 else y)
-            return min(x, max_val[0] - 2), min(y, max_val[1] - 2)
+                x = int(el_x.value) if el_x else 0
+                y = int(el_y.value) if el_y else 0
+            except: x, y = 0, 0
+
+            if is_solid:
+                # 實心模式強制修正為介於 1 ~ max-2 之間的奇數
+                x = max(1, min(x, max_w - 2))
+                y = max(1, min(y, max_h - 2))
+                if x % 2 == 0: x = x - 1 if x > 1 else x + 1
+                if y % 2 == 0: y = y - 1 if y > 1 else y + 1
+            else:
+                x = max(0, min(x, max_w - 1))
+                y = max(0, min(y, max_h - 1))
+                
+            return x, y
 
         async def generate_maze_animated(event):
             global current_solution_path
-            btn = document.querySelector("#genBtn")
-            if btn: btn.disabled = True
+            gen_btn = document.querySelector("#genBtn")
+            ans_btn = document.querySelector("#ansBtn")
             
+            if gen_btn: gen_btn.disabled = True
+            if ans_btn: ans_btn.disabled = True
+            
+            mode = document.querySelector("#modeSelect").value
+            is_solid = (mode == 'solid')
+
             try:
                 w_el = document.querySelector("#widthInput")
                 h_el = document.querySelector("#heightInput")
-                w = int(w_el.value) if w_el else 21
-                h = int(h_el.value) if h_el else 21
-            except: w, h = 21, 21
+                w = int(w_el.value) if w_el else 20
+                h = int(h_el.value) if h_el else 20
+            except: w, h = 20, 20
 
-            w = max(5, w - 1 if w % 2 == 0 else w)
-            h = max(5, h - 1 if h % 2 == 0 else h)
-            if document.querySelector("#widthInput"): document.querySelector("#widthInput").value = str(w)
-            if document.querySelector("#heightInput"): document.querySelector("#heightInput").value = str(h)
+            if is_solid:
+                w = max(5, w if w % 2 == 1 else w + 1)
+                h = max(5, h if h % 2 == 1 else h + 1)
+                document.querySelector("#widthInput").value = str(w)
+                document.querySelector("#heightInput").value = str(h)
+            else:
+                w = max(3, w)
+                h = max(3, h)
 
-            sx, sy = parse_coord("#startXInput", "#startYInput", (w, h))
-            ex, ey = parse_coord("#endXInput", "#endYInput", (w, h))
+            sx, sy = parse_coord("#startXInput", "#startYInput", w, h, is_solid)
+            ex, ey = parse_coord("#endXInput", "#endYInput", w, h, is_solid)
 
-            setupCanvas(w, h, sx, sy, ex, ey)
             setGameStatus("generating", "")
-
             await asyncio.sleep(0.01)
 
-            maze, history = generate_raw_maze(w, h, sx, sy, ex, ey)
-            current_solution_path = solve_maze(maze, w, h, sx, sy, ex, ey)
-            
-            passages = sum(row.count(0) for row in maze)
-            ratio = (len(current_solution_path) / passages * 100) if passages > 0 else 0
-            final_ratio = f"{ratio:.1f}% ({len(current_solution_path)}/{passages} 格)"
+            if mode == 'line':
+                h_walls, v_walls, sol = generate_line_maze(w, h, sx, sy, ex, ey)
+                current_solution_path = sol
+                mazeEngine.setMazeData(mode, w, h, sx, sy, ex, ey, json.dumps(h_walls), json.dumps(v_walls), None, json.dumps(sol))
+                total_passages = w * h
+            else:
+                try:
+                    sp_el = document.querySelector("#genSpeedInput")
+                    gen_speed = int(sp_el.value) if sp_el else 80
+                except: gen_speed = 80
 
-            total_cells = w * h
-            try:
-                sp_el = document.querySelector("#speedInput")
-                speed = int(sp_el.value) if sp_el else 101
-            except: speed = 101
+                grid, sol = await generate_solid_maze_animated(w, h, sx, sy, ex, ey, gen_speed)
+                current_solution_path = sol
+                mazeEngine.setMazeData(mode, w, h, sx, sy, ex, ey, None, None, json.dumps(grid), json.dumps(sol))
+                total_passages = sum(row.count(0) for row in grid)
 
-            delay = 0 if speed >= 101 or total_cells > 5000 else max(0.001, (101 - speed) * 0.0015)
-            step_skip = 1 if total_cells < 2500 else (4 if total_cells < 10000 else 20)
-
-            if maze and history:
-                last_head = None
-                for step_idx, item in enumerate(history):
-                    r, c, val = item
-                    if last_head:
-                        drawSingleCell(last_head[0], last_head[1], maze[last_head[0]][last_head[1]])
-                    
-                    draw_val = maze[r][c] if maze[r][c] == 1 else val
-                    drawSingleCell(r, c, draw_val)
-                    last_head = (r, c) if val == 5 else None
-
-                    if step_idx % step_skip == 0:
-                        if delay > 0: await asyncio.sleep(delay)
-                        elif step_idx % 200 == 0: await asyncio.sleep(0)
-
-            # 重新刷一次 canvas 確保最後強制的死巷牆壁有正確繪製
-            drawMaze()
-
-            # 重新填上起點與終點顏色
-            maze[sy][sx] = 2
-            maze[ey][ex] = 3
-            drawSingleCell(sy, sx, 2)
-            drawSingleCell(ey, ex, 3)
+            ratio = (len(sol) / total_passages * 100) if total_passages > 0 else 0
+            final_ratio = f"{ratio:.1f}% ({len(sol)}/{total_passages} 格)"
 
             enableUIButtons()
             setGameStatus("ready", final_ratio)
-            if btn: btn.disabled = False
+            
+            if gen_btn: gen_btn.disabled = False
+            if ans_btn: ans_btn.disabled = False
 
         async def show_answer_animated(event):
             global is_showing_ans, current_solution_path
             if is_showing_ans or not current_solution_path: return
+            
+            gen_btn = document.querySelector("#genBtn")
+            ans_btn = document.querySelector("#ansBtn")
+            
+            if gen_btn: gen_btn.disabled = True
+            if ans_btn: ans_btn.disabled = True
             is_showing_ans = True
 
-            for p in current_solution_path:
-                r, c = p[0], p[1]
-                if (c, r) != (current_solution_path[0][1], current_solution_path[0][0]) and \
-                   (c, r) != (current_solution_path[-1][1], current_solution_path[-1][0]):
-                    drawSingleCell(r, c, 9)
-                    await asyncio.sleep(0.015)
+            try:
+                ans_sp_el = document.querySelector("#ansSpeedInput")
+                ans_speed = int(ans_sp_el.value) if ans_sp_el else 50
+            except: ans_speed = 50
+
+            if ans_speed >= 101:
+                mazeEngine.draw(json.dumps(current_solution_path))
+            else:
+                delay = max(0.001, (101 - ans_speed) * 0.001)
+                temp_path = []
+                for p in current_solution_path:
+                    temp_path.append(p)
+                    mazeEngine.draw(json.dumps(temp_path))
+                    await asyncio.sleep(delay)
 
             is_showing_ans = False
+            if gen_btn: gen_btn.disabled = False
+            if ans_btn: ans_btn.disabled = False
 
         click_gen_proxy = create_proxy(lambda e: asyncio.ensure_future(generate_maze_animated(e)))
         click_ans_proxy = create_proxy(lambda e: asyncio.ensure_future(show_answer_animated(e)))
