@@ -128,7 +128,7 @@
 </head>
 <body>
     <header>
-        <b>歡迎來到rvrv3210網站<img src="loge.jpg"></b>      
+        <b>歡迎來到rvrv3210網站<img src="loge.jpg"></b><b id="time"></b>
     </header>
     <nav>
         <a><button style="color: #fff;">首頁</button></a><a href="https://musicgrc3520-star.github.io/rvrv3210-2"><button>功能(生成迷宮)</button></a><a href="https://musicgrc3520-star.github.io/rvrv3210-2/game - rvrv3210/game - rvrv3210.html"><button>測試</button></a><a href="https://musicgrc3520-star.github.io/rvrv3210-2/renew.htm"><button>更新日誌</button></a>
@@ -152,6 +152,13 @@
         document.addEventListener("keydown", function(event) {
             console.log("你按了：" + event.key);
         });
+        function time(){
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById("time").textContent = timeString;
+            
+        }
+       setInterval(time,1000)
     </script>
 </body>
 </html>
